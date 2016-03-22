@@ -1,0 +1,48 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="assets/css/bootstrap-theme.min.css" />
+        <link rel="stylesheet" href="assets/css/bootstrap-table.min.css">
+        <style>
+            /*An override to prevent the tables from adding scroll bars*/
+            .fixed-table-body{ overflow: visible; }
+
+            .bootstrap-table .table.table-no-bordered>tbody>tr>td,
+            .bootstrap-table .table.table-no-bordered>thead>tr>th {
+                max-width: 200px;
+                word-wrap: break-word;
+            }
+            .btn.btn-secondary-outline {
+                background: white;
+                border: 1px solid #ccc;
+            }
+            .btn.btn-secondary-outline.current {
+                box-shadow: inset 0 0 0 1px #ccc, inset 0 2px 12px #ccc;
+            }
+        </style>
+        <script src="assets/js/jquery.min.js"></script>
+        <script src="assets/js/bootstrap.min.js"></script>
+        <script src="assets/js/bootstrap-table.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                // Add a label to the seach bar.
+                var label = $('<label class="sr-only" for="search-field">Filter Results:</label>'),
+                    search_input = $('.search input').attr('id', 'search-field');
+                label.insertBefore(search_input);
+
+                $("#summary-toolbar").prependTo(".fixed-table-toolbar");
+
+                $('.filterby-btn').click(function(){
+                    $('.table').bootstrapTable('filterBy',
+                        { Type: this.getAttribute('data-filterby').split(',') }
+                    );
+                    $('.filterby-btn.current').removeClass('current').attr('aria-pressed', 'false');
+                    $(this).addClass('current').attr('aria-pressed', 'true');
+                })
+            });
+        </script>
+    </head>
+    <body>
+        ${next.body()}
+    </body>
+</html>

@@ -1,0 +1,46 @@
+<%inherit file="base.html" />
+<%namespace name="summary" file="summary.html"/>
+<div class="col-sm-10 col-sm-offset-1">
+<h1>Accessibility Audit Index</h1>
+</div>
+${summary.make_summary(
+    count['error'],
+    count['warning'],
+    count['notice'],
+    count['total']
+)}
+
+<br />
+<div class="col-sm-10 col-sm-offset-1" style="margin-bottom: 30px;">
+<h2 class="hd-4">Pages Checked</h2>
+<table data-classes='table table-no-bordered'
+    data-toggle="table"
+    data-search="true">
+    <thead>
+        <tr>
+            <th data-field='Page Title' data-sortable="true">Page Title</th>
+            <th data-field='Results Link' data-sortable="true">Results Link</th>
+            <th class='active' data-field='Total' data-sortable="true">Total</th>
+            <th class='danger' data-field='Errors' data-sortable="true">Errors</th>
+            <th class='warning' data-field='Warnings' data-sortable="true">Warnings</th>
+            <th class='info' data-field='Notices' data-sortable="true">Notices</th>
+        </tr>
+    </thead>
+    <tbody>
+        % for url,result in pageResults.iteritems():
+            ${makerow(result, url)}
+        % endfor
+    </tbody>
+</table>
+</div>
+
+<%def name="makerow(result, url)">
+    <tr>
+        <td><a href="${url}">${result['page_title']}</a></td>
+        <td><a href="${result['filename'] + '.html'}">Results<span class='sr-only'>&nbsp;for ${result['page_title']}</span></a></td>
+        <td>${result['total']}</td>
+        <td>${result['error']}</td>
+        <td>${result['warning']}</td>
+        <td>${result['notice']}</td>
+    </tr>
+</%def>
