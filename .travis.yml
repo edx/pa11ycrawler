@@ -1,0 +1,14 @@
+language:
+   - python
+   - node_js
+python: "2.7"
+node_js: "4.1"
+sudo: true
+install:
+    - make develop
+script:
+    - make quality
+    - make test
+branches:
+    only:
+      - master

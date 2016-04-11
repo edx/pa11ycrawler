@@ -1,0 +1,52 @@
+<%inherit file="base.html" />
+<%namespace name="summary" file="summary.html"/>
+
+<div class="col-sm-2 col-sm-offset-10" style="padding-top: 10px;">
+    <a href="index.html">Back to Index</a>
+</div>
+
+<div class="col-sm-10 col-sm-offset-1" style="margin-bottom: 30px;">
+    <h1>Accessibility Audit for ${info['page_title']}</h1>
+    <p><span class='h5'>URL</span> ${url}</p>
+</div>
+<div class="col-sm-10 col-sm-offset-1" style="margin-bottom: 30px;">
+    ${summary.make_summary_toolbar(
+        report['count']['error'],
+        report['count']['warning'],
+        report['count']['notice'],
+        report['count']['total']
+    )}
+
+    <table data-classes='table table-no-bordered'
+        data-toggle="table"
+        data-search="true">
+        <thead>
+            <tr>
+                <th data-field='Type' data-sortable="true">Type</th>
+                <th data-field='Code' data-sortable="true">Code</th>
+                <th data-field='Docs' data-sortable="true">Docs</th>
+                <th data-field='Message' data-sortable="true">Message</th>
+                <th data-field='HTML' data-sortable="true">HTML</th>
+            </tr>
+        </thead>
+        <tbody>
+        % for result in report['results']:
+            ${makerow(result, classes)}
+        % endfor
+        </tbody>
+    </table>
+</div>
+
+<%def name="makerow(result, classes)">
+    <tr>
+        <td class="${classes[result['type']]}">${result['type']}</td>
+        <td> ${get_code_info(result['code'])['base_code']} </td>
+        <td>
+        % for code, href in get_code_info(result['code'])['doc_links'].iteritems():
+            <a href="${href}"><span class='sr-only'>Docs for </span>${code}</a>
+        % endfor
+        </td>
+        <td>${result['message']}</td>
+        <td>${result['html'] | h}</td>
+    </tr>
+</%def>

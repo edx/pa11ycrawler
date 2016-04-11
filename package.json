@@ -1,0 +1,9 @@
+{
+  "name": "pa11ycrawler",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "pa11y": "3.6.0",
+    "pa11y-reporter-1.0-json": "1.0.2"
+  }
+}
