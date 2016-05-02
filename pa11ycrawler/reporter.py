@@ -30,7 +30,7 @@ def get_code_info(code):
     base_code_matches = guide_pattern.match(code)
 
     if not base_code_matches:
-        print (
+        log.debug(
             'Code {code} doesn\'t match expected pattern. Unable to produce '
             'documentation links for reports.'.format(code=code)
         )

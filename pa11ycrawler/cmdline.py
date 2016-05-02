@@ -18,6 +18,9 @@ from pa11ycrawler.settings_helpers import (
 from pa11ycrawler.spiders.pa11y_spider import Pa11ySpider
 
 
+log = logging.getLogger(__name__)
+
+
 # ------------ Main CLI ------------
 
 
@@ -101,7 +104,7 @@ def run(settings):
     """
     Runs the pa11ycrawler.
     """
-    print 'Running pa11ycrawler...'
+    log.info('Running pa11ycrawler...')
     process = CrawlerProcess(settings)
     process.crawl(Pa11ySpider)
     process.start()  # this will block until crawling is finished
@@ -149,7 +152,7 @@ def gen_html_reports(settings):
     """
     Generates html reports from the 1.0-json formatted reports.
     """
-    print "Generating html reports..."
+    log.info('Generating html reports...')
     reporter = HtmlReporter(settings)
     reporter.make_html()
 
@@ -202,7 +205,7 @@ def main():
     args = parser.parse_args()
     settings = args_to_settings(args)
     logging.basicConfig(
-        format='%(asctime)s [%(levelname)s] [%(name)s]: %(message)s"',
+        format='%(asctime)s [%(levelname)s] [%(name)s]: %(message)s',
         level=settings.get('LOG_LEVEL')
     )
     args.func(settings)
