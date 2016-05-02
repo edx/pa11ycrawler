@@ -3,6 +3,7 @@
 The command line interface for pa11ycrawler.
 """
 import argparse
+import logging
 
 from textwrap import dedent
 
@@ -15,6 +16,7 @@ from pa11ycrawler.settings_helpers import (
     get_default_settings,
 )
 from pa11ycrawler.spiders.pa11y_spider import Pa11ySpider
+
 
 # ------------ Main CLI ------------
 
@@ -133,6 +135,7 @@ def json_to_html_cli(subparsers):
     keys = [
         'PA11YCRAWLER_REPORTS_DIR',
         'PA11YCRAWLER_KEEP_EXISTING_REPORTS',
+        'LOG_LEVEL',
     ]
 
     for key in keys:
@@ -198,6 +201,10 @@ def main():
     parser = cli()
     args = parser.parse_args()
     settings = args_to_settings(args)
+    logging.basicConfig(
+        format='%(asctime)s [%(levelname)s] [%(name)s]: %(message)s"',
+        level=settings.get('LOG_LEVEL')
+    )
     args.func(settings)
 
 
