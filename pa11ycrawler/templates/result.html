@@ -31,15 +31,15 @@
         </thead>
         <tbody>
         % for result in report['results']:
-            ${makerow(result, classes)}
+            ${makerow(result, color_classes)}
         % endfor
         </tbody>
     </table>
 </div>
 
-<%def name="makerow(result, classes)">
+<%def name="makerow(result, color_classes)">
     <tr>
-        <td class="${classes[result['type']]}">${result['type']}</td>
+        <td class="${color_classes[result['type']]}">${result['type']}</td>
         <td> ${get_code_info(result['code'])['base_code']} </td>
         <td>
         % for code, href in get_code_info(result['code'])['doc_links'].iteritems():

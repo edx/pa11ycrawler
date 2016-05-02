@@ -4,12 +4,16 @@ This module defines the ways in which the data obtained from the
 Pa11ySpider and Pa11yPipleline is processed.
 """
 import json
+import logging
 import os
 import re
 import shutil
 
 from abc import ABCMeta, abstractmethod
+from collections import defaultdict, Counter
 from mako.lookup import TemplateLookup
+
+log = logging.getLogger("pa11ycrawler")
 
 
 def get_code_info(code):
@@ -173,6 +177,11 @@ class HtmlReporter(ReporterBaseClass):
         par_dir = os.path.dirname(os.path.abspath(__file__))
         self.templates_dir = os.path.join(par_dir, 'templates')
         self.template_lookup = TemplateLookup(directories=[self.templates_dir])
+        self.color_classes = {
+            'error': 'danger',
+            'warning': 'warning',
+            'notice': 'info',
+        }
         self.summary = {
             "pageResults": {},
             "overallCount": {
@@ -182,6 +191,7 @@ class HtmlReporter(ReporterBaseClass):
                 "notice": 0,
             }
         }
+        self.summary_by_code = defaultdict(dict)
 
     def make_html(self):
         """
@@ -203,6 +213,7 @@ class HtmlReporter(ReporterBaseClass):
             self._make_page_result_html(url, info, results)
             self._update_summary(url, info, results)
 
+        self._make_summary_by_code_html()
         self._make_index_html()
 
     def _update_summary(self, url, info, results):
@@ -216,6 +227,17 @@ class HtmlReporter(ReporterBaseClass):
         self.summary["overallCount"]["error"] += results["count"]["error"]
         self.summary["overallCount"]["warning"] += results["count"]["warning"]
         self.summary["overallCount"]["notice"] += results["count"]["notice"]
+
+        for result in results['results']:
+            self.summary_by_code[result['code']]['type'] = result['type']
+            self.summary_by_code[result['code']]['message'] = result['message']
+
+            if not self.summary_by_code[result['code']].get('pages'):
+                self.summary_by_code[result['code']]['pages'] = set()
+
+            self.summary_by_code[result['code']]['pages'].add((
+                info['page_title'].strip(), url
+            ))
 
     def _setup_dir(self):
         """
@@ -262,11 +284,7 @@ class HtmlReporter(ReporterBaseClass):
             'info': info,
             'get_code_info': get_code_info,
             'report': results,
-            'classes': {
-                'error': 'danger',
-                'warning': 'warning',
-                'notice': 'info',
-            },
+            'color_classes': self.color_classes,
             'sort_order': {
                 'error': '0',
                 'warning': '1',
@@ -275,8 +293,35 @@ class HtmlReporter(ReporterBaseClass):
         }
         rendered_html = result_template.render(**context)
 
+        print "SUMMARY FOR {}: \n {}".format(
+            info['page_title'].strip(),
+            json.dumps(results['count'])
+        )
+
         with open(html_file, 'w+') as filepath:
             filepath.write(rendered_html.encode("UTF-8"))
+
+    def _make_summary_by_code_html(self):
+        """
+        Makes an html file that summarizes the results by mapping the issue
+        code to the pages affected by it.
+        """
+        print 'Making summary_by_code.html'
+
+        index_template = self.template_lookup.get_template('summary_by_code.html')
+
+        context = {
+            'results': self.summary_by_code,
+            'get_code_info': get_code_info,
+            'color_classes': self.color_classes,
+            'counts_by_type': Counter([code['type'] for code in self.summary_by_code.values()]),
+            'total_codes': len(self.summary_by_code.keys()),
+        }
+
+        summary_html = index_template.render(**context)
+        filepath = os.path.join(self.html_dir, 'summary_by_code.html')
+        with open(filepath, 'w+') as summary_file:
+            summary_file.write(summary_html)
 
     def _make_index_html(self):
         """
@@ -291,6 +336,8 @@ class HtmlReporter(ReporterBaseClass):
             'count': self.summary['overallCount'],
             'pageResults': self.summary['pageResults'],
         }
+
+        print "PA11YCRAWLER SUMMARY:\n {}".format(json.dumps(context['count']))
 
         index_html = index_template.render(**context)
         filepath = os.path.join(self.html_dir, 'index.html')
