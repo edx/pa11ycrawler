@@ -150,6 +150,7 @@ class HtmlReporterTestCase(TestCase):
             results_map_file.write(results_map)
 
         self.html_results_file = os.path.join(self.reporter.html_dir, '1234.html')
+        self.html_summary_by_code_file = os.path.join(self.reporter.html_dir, 'summary_by_code.html')
         self.html_index_file = os.path.join(self.reporter.html_dir, 'index.html')
 
         self.addCleanup(self.cleanup)
@@ -161,3 +162,4 @@ class HtmlReporterTestCase(TestCase):
         self.reporter.make_html()
         self.assertTrue(os.path.isfile(self.html_results_file))
         self.assertTrue(os.path.isfile(self.html_index_file))
+        self.assertTrue(os.path.isfile(self.html_summary_by_code_file))
