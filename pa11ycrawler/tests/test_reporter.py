@@ -160,6 +160,51 @@ class HtmlReporterTestCase(TestCase):
 
     def test_make_html(self):
         self.reporter.make_html()
+        expected_summary = {
+            'pageResults': {
+                'http://example.com': {
+                    'notice': 2,
+                    'warning': 0,
+                    'page_title': 'test',
+                    'error': 1,
+                    'total': 3,
+                    'filename': '1234',
+                },
+            },
+            'overallCount': {
+                'notice': 2,
+                'total': 3,
+                'warning': 0,
+                'pages_affected': 1,
+                'error': 1,
+            },
+        }
+        self.assertEqual(expected_summary, self.reporter.summary)
+
+        expected_summary_by_code = {
+            'WCAG2AA.Principle2.Guideline2_4.2_4_4.H77,H78,H79,H80,H81': {
+                'message': 'msg2',
+                'type': 'error',
+                'pages': set([('test', 'http://example.com')]),
+            },
+            'unknownpattern_for_code': {
+                'message': 'msg4',
+                'type': 'notice',
+                'pages': set([('test', 'http://example.com')]),
+            },
+            'WCAG2AA.Principle1.Guideline1_1.1_1_1.G94.Image': {
+                'message': 'msg3',
+                'type': 'notice',
+                'pages': set([('test', 'http://example.com')]),
+            },
+            'WCAG2AA.Principle3.Guideline3_2.3_2_1.G107': {
+                'message': 'msg1',
+                'type': 'notice',
+                'pages': set([('test', 'http://example.com')]),
+            },
+        }
+        self.assertEqual(expected_summary_by_code, self.reporter.summary_by_code)
+
         self.assertTrue(os.path.isfile(self.html_results_file))
         self.assertTrue(os.path.isfile(self.html_index_file))
         self.assertTrue(os.path.isfile(self.html_summary_by_code_file))
