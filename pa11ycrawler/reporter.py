@@ -238,7 +238,7 @@ class HtmlReporter(ReporterBaseClass):
                 self.summary_by_code[result['code']]['pages'] = set()
 
             self.summary_by_code[result['code']]['pages'].add((
-                info['page_title'].strip(), url
+                info['page_title'].strip() if info['page_title'] else '', url
             ))
 
     def _setup_dir(self):
@@ -297,7 +297,7 @@ class HtmlReporter(ReporterBaseClass):
 
         log.info(
             "SUMMARY FOR {}: {}".format(
-                info['page_title'].strip(),
+                info['page_title'].strip() if info['page_title'] else '',
                 json.dumps(results['count'])
             )
         )
