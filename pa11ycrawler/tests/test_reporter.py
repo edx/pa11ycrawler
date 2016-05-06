@@ -143,8 +143,16 @@ class HtmlReporterTestCase(TestCase):
         results_map = json.dumps({
             'http://example.com': {
                 'filename': '1234',
-                'page_title': 'test',
-            }
+                'page_title': "test",
+            },
+            'http://example.com/empty_title': {
+                'filename': '1234',
+                'page_title': '',
+            },
+            'http://example.com/null_title': {
+                'filename': '1234',
+                'page_title': None,
+            },
         })
         with open(self.reporter.results_map_file, 'w') as results_map_file:
             results_map_file.write(results_map)
@@ -170,13 +178,29 @@ class HtmlReporterTestCase(TestCase):
                     'total': 3,
                     'filename': '1234',
                 },
+                'http://example.com/empty_title': {
+                    'notice': 2,
+                    'warning': 0,
+                    'page_title': '',
+                    'error': 1,
+                    'total': 3,
+                    'filename': '1234',
+                },
+                'http://example.com/null_title': {
+                    'notice': 2,
+                    'warning': 0,
+                    'page_title': None,
+                    'error': 1,
+                    'total': 3,
+                    'filename': '1234',
+                },
             },
             'overallCount': {
-                'notice': 2,
-                'total': 3,
+                'notice': 6,
+                'total': 9,
                 'warning': 0,
-                'pages_affected': 1,
-                'error': 1,
+                'pages_affected': 3,
+                'error': 3,
             },
         }
         self.assertEqual(expected_summary, self.reporter.summary)
@@ -185,22 +209,38 @@ class HtmlReporterTestCase(TestCase):
             'WCAG2AA.Principle2.Guideline2_4.2_4_4.H77,H78,H79,H80,H81': {
                 'message': 'msg2',
                 'type': 'error',
-                'pages': set([('test', 'http://example.com')]),
+                'pages': set([
+                    ('test', 'http://example.com'),
+                    ('', 'http://example.com/empty_title'),
+                    ('', 'http://example.com/null_title'),
+                ]),
             },
             'unknownpattern_for_code': {
                 'message': 'msg4',
                 'type': 'notice',
-                'pages': set([('test', 'http://example.com')]),
+                'pages': set([
+                    ('test', 'http://example.com'),
+                    ('', 'http://example.com/empty_title'),
+                    ('', 'http://example.com/null_title'),
+                ]),
             },
             'WCAG2AA.Principle1.Guideline1_1.1_1_1.G94.Image': {
                 'message': 'msg3',
                 'type': 'notice',
-                'pages': set([('test', 'http://example.com')]),
+                'pages': set([
+                    ('test', 'http://example.com'),
+                    ('', 'http://example.com/empty_title'),
+                    ('', 'http://example.com/null_title'),
+                ]),
             },
             'WCAG2AA.Principle3.Guideline3_2.3_2_1.G107': {
                 'message': 'msg1',
                 'type': 'notice',
-                'pages': set([('test', 'http://example.com')]),
+                'pages': set([
+                    ('test', 'http://example.com'),
+                    ('', 'http://example.com/empty_title'),
+                    ('', 'http://example.com/null_title'),
+                ]),
             },
         }
         self.assertEqual(expected_summary_by_code, self.reporter.summary_by_code)
