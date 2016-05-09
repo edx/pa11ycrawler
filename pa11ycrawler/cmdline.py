@@ -105,6 +105,10 @@ def run(settings):
     """
     Runs the pa11ycrawler.
     """
+    configure_logging({
+        'LOG_FORMAT': settings.get('LOG_FORMAT'),
+        'LOG_LEVEL': settings.get('LOG_LEVEL'),
+    }, install_root_handler=False)
     log.info('Running pa11ycrawler...')
     process = CrawlerProcess(settings)
     process.crawl(Pa11ySpider)
@@ -153,6 +157,10 @@ def gen_html_reports(settings):
     """
     Generates html reports from the 1.0-json formatted reports.
     """
+    logging.basicConfig(
+        format=settings.get('LOG_FORMAT'),
+        level=settings.get('LOG_LEVEL'),
+    )
     log.info('Generating html reports...')
     reporter = HtmlReporter(settings)
     reporter.make_html()
@@ -205,14 +213,6 @@ def main():
     parser = cli()
     args = parser.parse_args()
     settings = args_to_settings(args)
-    configure_logging({
-        'LOG_FORMAT': '%(asctime)s [%(levelname)s] [%(name)s]: %(message)s',
-        'LOG_LEVEL': settings.get('LOG_LEVEL'),
-    })
-    logging.basicConfig(
-        format='%(asctime)s [%(levelname)s] [%(name)s]: %(message)s',
-        level=settings.get('LOG_LEVEL'),
-    )
     args.func(settings)
 
 
