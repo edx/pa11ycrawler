@@ -8,6 +8,7 @@ import logging
 from textwrap import dedent
 
 from scrapy.crawler import CrawlerProcess
+from scrapy.utils.log import configure_logging
 
 from pa11ycrawler.reporter import HtmlReporter
 from pa11ycrawler.settings_helpers import (
@@ -204,9 +205,13 @@ def main():
     parser = cli()
     args = parser.parse_args()
     settings = args_to_settings(args)
+    configure_logging({
+        'LOG_FORMAT': '%(asctime)s [%(levelname)s] [%(name)s]: %(message)s',
+        'LOG_LEVEL': settings.get('LOG_LEVEL'),
+    })
     logging.basicConfig(
         format='%(asctime)s [%(levelname)s] [%(name)s]: %(message)s',
-        level=settings.get('LOG_LEVEL')
+        level=settings.get('LOG_LEVEL'),
     )
     args.func(settings)
 
