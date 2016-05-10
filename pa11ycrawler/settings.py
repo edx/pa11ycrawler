@@ -89,6 +89,7 @@ COOKIES_DEBUG = False
 COOKIES_ENABLED = True
 DEPTH_LIMIT = 2
 LOG_LEVEL = 'INFO'
+LOG_FORMAT = '%(asctime)s [%(levelname)s] [%(name)s]: %(message)s'
 
 # Don't override these or the crawler will surely break --------
 BOT_NAME = 'pa11ycrawler'
