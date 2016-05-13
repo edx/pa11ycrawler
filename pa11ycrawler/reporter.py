@@ -209,7 +209,11 @@ class HtmlReporter(ReporterBaseClass):
             result_file = os.path.join(self.results_dir, info['filename'] + '.1.0.json')
 
             with open(result_file, 'r') as report:
-                results = json.load(report)
+                try:
+                    results = json.load(report)
+                except ValueError as error:
+                    log.error(error.message)
+                    continue
 
             self._make_page_result_html(url, info, results)
             self._update_summary(url, info, results)
