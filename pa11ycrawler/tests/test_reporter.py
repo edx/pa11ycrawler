@@ -5,6 +5,7 @@ import shutil
 
 from unittest import TestCase
 
+from mock import patch
 from scrapy.utils.test import get_crawler
 
 from pa11ycrawler.items import A11yItem
@@ -116,29 +117,20 @@ class BaseReporterTestCase(TestCase):
         self.assertTrue(os.path.isfile(source_file))
 
 
-class HtmlReporterTestCase(TestCase):
+class HtmlReporterBaseTestCase(TestCase):
+
+    results = None
 
     def setUp(self):
-        super(HtmlReporterTestCase, self).setUp()
+        super(HtmlReporterBaseTestCase, self).setUp()
         settings = get_test_settings_dict(PA11Y_REPORTER='1.0-json')
         self.reporter = HtmlReporter(settings)
-        results = json.dumps({
-            'count': {
-                'notice': 2,
-                'total': 3,
-                'warning': 0,
-                'error': 1,
-            },
-            'results': SAMPLE_RESULTS,
-            'isPerfect': False,
-        })
-
         if not os.path.exists(self.reporter.results_dir):
             os.makedirs(self.reporter.results_dir)
 
         results_file = os.path.join(self.reporter.results_dir, '1234.1.0.json')
         with open(results_file, 'w') as results_file_opened:
-            results_file_opened.write(results)
+            results_file_opened.write(self.results)
 
         results_map = json.dumps({
             'http://example.com': {
@@ -165,6 +157,30 @@ class HtmlReporterTestCase(TestCase):
 
     def cleanup(self):
         shutil.rmtree(self.reporter.reports_dir)
+
+
+class HtmlReporterValueErrorTestCase(HtmlReporterBaseTestCase):
+
+    results = ""
+
+    @patch('pa11ycrawler.reporter.log')
+    def test_make_html_value_error(self, mock_log):
+        self.reporter.make_html()
+        mock_log.error.assert_called_with('No JSON object could be decoded')
+
+
+class HtmlReporterTestCase(HtmlReporterBaseTestCase):
+
+    results = json.dumps({
+        'count': {
+            'notice': 2,
+            'total': 3,
+            'warning': 0,
+            'error': 1,
+        },
+        'results': SAMPLE_RESULTS,
+        'isPerfect': False,
+    })
 
     def test_make_html(self):
         self.reporter.make_html()
