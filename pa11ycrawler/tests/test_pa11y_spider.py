@@ -25,7 +25,7 @@ class Pa11ySpiderTest(TestCase):
         response = fake_response_from_file('samples/page.html')
         results = self.spider.parse_item(response)  # pylint: disable=no-member
         self.assertEqual(results['url'], 'http://www.example.com')
-        self.assertEqual(results['page_title'], 'Test Page')
+        self.assertEqual(results['page_title'], u'Test Page \xc2\xae')
         self.assertEqual(results['filename'], filename)
         self.assertEqual(results['headers'], {'Cookies': ['somecookie=cookieval']})
         self.assertEqual(results['source'], '')
