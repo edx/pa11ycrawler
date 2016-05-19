@@ -300,10 +300,9 @@ class HtmlReporter(ReporterBaseClass):
         rendered_html = result_template.render(**context)
 
         log.info(
-            "SUMMARY FOR {}: {}".format(
-                info['page_title'].strip() if info['page_title'] else '',
-                json.dumps(results['count'])
-            )
+            "SUMMARY FOR %s: %s",
+            info['page_title'].strip() if info['page_title'] else '',
+            json.dumps(results['count'])
         )
 
         with open(html_file, 'w+') as filepath:
@@ -329,15 +328,14 @@ class HtmlReporter(ReporterBaseClass):
         }
 
         log.info(
-            "PA11YCRAWLER SUMMARY BY ISSUE CODE: {}".format(
-                json.dumps(counts_by_type)
-            )
+            "PA11YCRAWLER SUMMARY BY ISSUE CODE: %s",
+            json.dumps(counts_by_type)
         )
 
         summary_html = index_template.render(**context)
         filepath = os.path.join(self.html_dir, 'summary_by_code.html')
         with open(filepath, 'w+') as summary_file:
-            summary_file.write(summary_html)
+            summary_file.write(summary_html.encode('utf-8'))
 
     def _make_index_html(self):
         """
@@ -354,12 +352,11 @@ class HtmlReporter(ReporterBaseClass):
         }
 
         log.info(
-            "PA11YCRAWLER SUMMARY BY ISSUE INSTANCE: {}".format(
-                json.dumps(context['count'])
-            )
+            "PA11YCRAWLER SUMMARY BY ISSUE INSTANCE: %s",
+            json.dumps(context['count'])
         )
 
         index_html = index_template.render(**context)
         filepath = os.path.join(self.html_dir, 'index.html')
         with open(filepath, 'w+') as index_file:
-            index_file.write(index_html)
+            index_file.write(index_html.encode('utf-8'))

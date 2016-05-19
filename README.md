@@ -24,7 +24,7 @@ npm install -g pa11y@3.6.0 pa11y-reporter-1.0-json@1.0.2
 Install via GitHub
 ------------------
 ```
-pip install git+https://github.com/clytwynec/pa11ycrawler.git
+pip install git+https://github.com/edx/pa11ycrawler.git
 ```
 
 Install via PyPi
@@ -48,10 +48,10 @@ Running the crawler
 
 To run the crawler, producing json reports
 ```
-pa11ycrawler run $START_URL --pa11y-crawler-allowed-domains=$ALLOWED_DOMAINS --pa11y-reporter='1.0-json'
+pa11ycrawler run $START_URL --pa11ycrawler-allowed-domains=$ALLOWED_DOMAINS --pa11y-reporter='1.0-json'
 ```
 
-NOTE: You probably want to make sure that `--pa11y-crawler-allowed-domains` is set, or you may start crawling external sites.
+NOTE: You probably want to make sure that `--pa11ycrawler-allowed-domains` is set, or you may start crawling external sites.
 
 For more options:
 ```
@@ -87,7 +87,7 @@ Prereqs
 Get the code
 ------------
 ```
-git clone https://github.com/clytwynec/pa11ycrawler.git
+git clone https://github.com/edx/pa11ycrawler.git
 ```
 
 Install python and node requirements

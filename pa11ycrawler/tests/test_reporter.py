@@ -63,7 +63,7 @@ class BaseReporterTestCase(TestCase):
         })
         self.item = A11yItem(
             url="http://example.com",
-            page_title="Test Page",
+            page_title=u'Test Page \xc2\xae',
             headers={},
             filename='testing_testing_123',
             source='scraped page content',
@@ -88,7 +88,7 @@ class BaseReporterTestCase(TestCase):
         with open(self.reporter.results_map_file, 'r') as results_map:
             expected = json.dumps({
                 "http://example.com": {
-                    "page_title": "Test Page",
+                    "page_title": u'Test Page \xc2\xae',
                     "filename": "testing_testing_123",
                 }
             })
@@ -140,6 +140,10 @@ class HtmlReporterBaseTestCase(TestCase):
             'http://example.com/empty_title': {
                 'filename': '1234',
                 'page_title': '',
+            },
+            'http://example.com/unicode': {
+                'filename': '1234',
+                'page_title': u'test \xc2\xae',
             },
             'http://example.com/null_title': {
                 'filename': '1234',
@@ -210,13 +214,21 @@ class HtmlReporterTestCase(HtmlReporterBaseTestCase):
                     'total': 3,
                     'filename': '1234',
                 },
+                'http://example.com/unicode': {
+                    'notice': 2,
+                    'warning': 0,
+                    'page_title': u'test \xc2\xae',
+                    'error': 1,
+                    'total': 3,
+                    'filename': '1234',
+                    },
             },
             'overallCount': {
-                'notice': 6,
-                'total': 9,
+                'notice': 8,
+                'total': 12,
                 'warning': 0,
-                'pages_affected': 3,
-                'error': 3,
+                'pages_affected': 4,
+                'error': 4,
             },
         }
         self.assertEqual(expected_summary, self.reporter.summary)
@@ -229,6 +241,7 @@ class HtmlReporterTestCase(HtmlReporterBaseTestCase):
                     ('test', 'http://example.com'),
                     ('', 'http://example.com/empty_title'),
                     ('', 'http://example.com/null_title'),
+                    (u'test \xc2\xae', 'http://example.com/unicode'),
                 ]),
             },
             'unknownpattern_for_code': {
@@ -238,6 +251,7 @@ class HtmlReporterTestCase(HtmlReporterBaseTestCase):
                     ('test', 'http://example.com'),
                     ('', 'http://example.com/empty_title'),
                     ('', 'http://example.com/null_title'),
+                    (u'test \xc2\xae', 'http://example.com/unicode'),
                 ]),
             },
             'WCAG2AA.Principle1.Guideline1_1.1_1_1.G94.Image': {
@@ -247,6 +261,7 @@ class HtmlReporterTestCase(HtmlReporterBaseTestCase):
                     ('test', 'http://example.com'),
                     ('', 'http://example.com/empty_title'),
                     ('', 'http://example.com/null_title'),
+                    (u'test \xc2\xae', 'http://example.com/unicode'),
                 ]),
             },
             'WCAG2AA.Principle3.Guideline3_2.3_2_1.G107': {
@@ -256,6 +271,7 @@ class HtmlReporterTestCase(HtmlReporterBaseTestCase):
                     ('test', 'http://example.com'),
                     ('', 'http://example.com/empty_title'),
                     ('', 'http://example.com/null_title'),
+                    (u'test \xc2\xae', 'http://example.com/unicode'),
                 ]),
             },
         }
