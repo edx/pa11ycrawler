@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='pa11ycrawler',
-    version='0.1',
+    version='0.0.4',
     package_data={
         'pa11ycrawler': [
             'templates/*.*',
