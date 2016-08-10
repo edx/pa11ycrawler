@@ -1,109 +1,69 @@
 Overview
 ========
 
-pa11ycrawler is a python command line tool built using [Scrapy](http://doc.scrapy.org/en/latest/index.html) and [Pa11y](http://pa11y.org/) for
-crawling a website and storing a Pa11y report for each page.
-
-The reports can be in the form of any of Pa11y's default report types or [1.0-json](https://github.com/springernature/pa11y-reporter-1.0-json).  There is an additional command to produce html reports from the 1.0-json.
+pa11ycrawler a [Scrapy](http://doc.scrapy.org/en/latest/index.html)
+spider that calls [Pa11y](http://pa11y.org/) on every page of a locally-running
+Open edX installation, to audit it for accessibiltiy purposes.
+It will store the result of each page audit in a data directory as a set of
+JSON files, which can be transformed into a beautiful HTML report.
 
 Installation
 ============
 
-Prereqs
--------
+pa11ycrawler requires Python 2.7 and Node.js installed.
 
-* python (v2.7)
-* node.js
-
-Install node Requirements
--------------------------
 ```
-npm install -g pa11y@3.6.0 pa11y-reporter-1.0-json@1.0.2
+pip install .
+npm install
 ```
-
-Install via GitHub
-------------------
-```
-pip install git+https://github.com/edx/pa11ycrawler.git
-```
-
-Install via PyPi
-----------------
-TODO
-
 
 Usage
 =====
 
-Basic usage
------------
-For help:
+Make sure you have an Open edX instance running at `localhost:8003`, then run:
 
 ```
-pa11ycrawler -h
+scrapy crawl local-edx
 ```
 
-Running the crawler
--------------------
+By default, pa11ycrawler will crawl through the edX101 demo course (course
+key `course-v1:edX+Test101+course`), but you can specify whatever course key
+you'd like with the `-a` flag, like this:
 
-To run the crawler, producing json reports
 ```
-pa11ycrawler run $START_URL --pa11ycrawler-allowed-domains=$ALLOWED_DOMAINS --pa11y-reporter='1.0-json'
-```
-
-NOTE: You probably want to make sure that `--pa11ycrawler-allowed-domains` is set, or you may start crawling external sites.
-
-For more options:
-```
-pa11ycrawler run -h
+scrapy crawl local-edx -a course_key=org/course/run
 ```
 
+pa11ycrawler will run each page through `pa11y`, encode the result as JSON,
+and save it as a file in a data directory. This data directory is "data" by
+default (as in, a directory named "data" that is at the same location that
+you run the `scrapy crawl` command from), but you can also change this with
+the `-a` flag, like this:
 
-Produce html reports from the 1.0-json reports
-----------------------------------------------
-
-
-To run the crawler, producing json reports
 ```
-pa11ycrawler json-to-html
-```
-
-For more options:
-```
-pa11ycrawler json-to-html -h
+scrapy crawl local-edx -a data_dir=~/pa11y-data
 ```
 
+Whatever directory you specify, it will be automatically created if it does
+not yet exist. In addition, this tool will never delete data from the data
+directory, so if you want to clear it out between runs, that's your
+responsibility!
 
-Development
-===========
+Transform to HTML
+=================
 
-Prereqs
--------
+This project comes with a script that can transform the data in this
+data directory into a pretty HTML table. The script is called
+`gen_html.py`, and it accepts two optional arguments: `--data-dir`
+and `--output-dir`. These arguments default to "data" and "html",
+respectively.
 
-* python (v2.7)
-* node.js
-* make
+You can also run the script with the `--help` argument to get more information.
 
-Get the code
-------------
-```
-git clone https://github.com/edx/pa11ycrawler.git
-```
+Running Tests
+=============
 
-Install python and node requirements
-------------------------------------
-```
-make develop
-```
-
-Running unit tests
--------------
-```
-make test
-```
-
-Checking code quality (pep8 and pylint)
----------------------------------------
-```
-make quality
-```
+This project has tests for the pipeline functions, where are where the main
+functionality of this crawler lives. To run those tests, run `py.test` or
+`make test`. You can also run `scrapy check local-edx` to test that the
+scraper is scraping data correctly.

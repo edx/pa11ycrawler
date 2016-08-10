@@ -1,24 +1,23 @@
 .PHONY: requirements
 
 requirements: requirements.js
-	pip install -q -r requirements/base.txt --exists-action w
+	pip install .
 
 requirements.js:
 	npm install
 
-requirements.test: requirements
-	pip install -q -r requirements/test.txt --exists-action w
-
 install: requirements
 
-develop: requirements.test
+develop: requirements
+	pip install -U pytest>=2.7 pytest-mock pycodestyle pylint edx-lint==0.5.1
 
 clean:
 	find . -name '*.pyc' -delete
 
 test: clean
-	nosetests pa11ycrawler --with-coverage --cover-package=pa11ycrawler
+	scrapy check local-edx
+	py.test
 
 quality:
-	pep8 pa11ycrawler
+	pycodestyle pa11ycrawler
 	pylint pa11ycrawler

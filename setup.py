@@ -15,13 +15,15 @@ setup(
         'pa11ycrawler.spiders'
     ],
     install_requires=[
-        'lxml>=3.4.4',
         'mako>=1.0.2',
         'scrapy>=1.0.5',
+        'urlobject',
     ],
-    entry_points={
-        'console_scripts': [
-            'pa11ycrawler=pa11ycrawler.cmdline:main',
-        ]
-    },
+    test_require=[
+        'pytest>=2.7',
+        'pytest-mock',
+        'pycodestyle',
+        'edx-lint==0.5.1',
+        'pylint',
+    ]
 )
