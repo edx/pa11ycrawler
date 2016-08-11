@@ -3,7 +3,7 @@ Overview
 
 pa11ycrawler a [Scrapy](http://doc.scrapy.org/en/latest/index.html)
 spider that calls [Pa11y](http://pa11y.org/) on every page of a locally-running
-Open edX installation, to audit it for accessibiltiy purposes.
+Open edX installation, to audit it for accessibility purposes.
 It will store the result of each page audit in a data directory as a set of
 JSON files, which can be transformed into a beautiful HTML report.
 
