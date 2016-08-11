@@ -15,7 +15,7 @@ clean:
 	find . -name '*.pyc' -delete
 
 test: clean
-	scrapy check local-edx
+	scrapy check edx
 	py.test
 
 quality:

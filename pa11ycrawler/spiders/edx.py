@@ -1,5 +1,5 @@
 """
-A spider that can crawl an instance of Open edX running locally.
+A spider that can crawl an Open edX instance.
 """
 import os
 from datetime import datetime
@@ -8,15 +8,13 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from pa11ycrawler.items import A11yItem
 
-AUTO_AUTH_URL = "http://localhost:8003/auto_auth"
-COURSE_BLOCKS_API_URL = "http://localhost:8003/api/courses/v1/blocks"
+AUTO_AUTH_PATH = "/auto_auth"
+COURSE_BLOCKS_API_PATH = "/api/courses/v1/blocks"
 
 
 class EdxSpider(CrawlSpider):
-    "A Scrapy spider that can crawl Open edX."
-    name = 'local-edx'
-    allowed_domains = ['localhost']
-    start_urls = []
+    "A Scrapy spider that can crawl an Open edX instance."
+    name = 'edx'
 
     rules = (
         Rule(
@@ -38,20 +36,37 @@ class EdxSpider(CrawlSpider):
 
     def __init__(
             self,
+            domain="localhost",
+            port="8000",
             course_key="course-v1:edX+Test101+course",
             data_dir="data",
         ):  # noqa
+        self.allowed_domains = [domain]
+        port = int(port)
+
         # set start URL based on course_key, which is the test course by default
-        api_url = URLObject(COURSE_BLOCKS_API_URL).set_query_params(
-            course_id=course_key,
-            depth="all",
-            all_blocks="true",
+        api_url = (
+            URLObject("http://")
+            .with_hostname(domain)
+            .with_port(port)
+            .with_path(COURSE_BLOCKS_API_PATH)
+            .set_query_params(
+                course_id=course_key,
+                depth="all",
+                all_blocks="true",
+            )
         )
-        auth_url = URLObject(AUTO_AUTH_URL).set_query_params(
-            staff='true',
-            course_id=course_key,
-            redirect="true",
-            redirect_to=api_url,
+        auth_url = (
+            URLObject("http://")
+            .with_hostname(domain)
+            .with_port(port)
+            .with_path(AUTO_AUTH_PATH)
+            .set_query_params(
+                staff='true',
+                course_id=course_key,
+                redirect="true",
+                redirect_to=api_url,
+            )
         )
         self.start_urls = [auth_url]
 

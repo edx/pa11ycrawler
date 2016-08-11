@@ -20,30 +20,28 @@ npm install
 Usage
 =====
 
-Make sure you have an Open edX instance running at `localhost:8003`, then run:
-
 ```
-scrapy crawl local-edx
+scrapy crawl edx
 ```
 
-By default, pa11ycrawler will crawl through the edX101 demo course (course
-key `course-v1:edX+Test101+course`), but you can specify whatever course key
-you'd like with the `-a` flag, like this:
+There are several options for this spider that you can configure using the
+`-a` scrapy flag.
 
-```
-scrapy crawl local-edx -a course_key=org/course/run
-```
+Option       | Default                        | Example
+------------ | ------------------------------ | -------
+`domain`     | `localhost`                    | `scrapy crawl edx -a domain=edx.org`
+`port`       | `8000`                         | `scrapy crawl edx -a port=8003`
+`course_key` | `course-v1:edX+Test101+course` | `scrapy crawl edx -a course_key=org/course/run`
+`data_dir`   | `data`                         | `scrapy crawl edx -a data_dir=~/pa11y-data`
 
-pa11ycrawler will run each page through `pa11y`, encode the result as JSON,
-and save it as a file in a data directory. This data directory is "data" by
-default (as in, a directory named "data" that is at the same location that
-you run the `scrapy crawl` command from), but you can also change this with
-the `-a` flag, like this:
+These options can be combined by specifying the `-a` flag multiple times.
+For example, `scrapy crawl edx -a domain=courses.edx.org -a port=80`.
 
-```
-scrapy crawl local-edx -a data_dir=~/pa11y-data
-```
-
+The `data_dir` option is used to determine where this crawler will save its
+output. pa11ycrawler will run each page of the site through `pa11y`,
+encode the result as JSON, and save it as a file in this directory.
+This data directory is "data" by default, which means it will create a directory
+named "data" in whatever directory you run the crawler from.
 Whatever directory you specify, it will be automatically created if it does
 not yet exist. In addition, this tool will never delete data from the data
 directory, so if you want to clear it out between runs, that's your
@@ -65,5 +63,5 @@ Running Tests
 
 This project has tests for the pipeline functions, where are where the main
 functionality of this crawler lives. To run those tests, run `py.test` or
-`make test`. You can also run `scrapy check local-edx` to test that the
+`make test`. You can also run `scrapy check edx` to test that the
 scraper is scraping data correctly.
