@@ -25,5 +25,10 @@ setup(
         'pycodestyle',
         'edx-lint==0.5.1',
         'pylint',
-    ]
+    ],
+    entry_points={
+        'console_scripts': [
+            'pa11ycrawler-html=pa11ycrawler.html:main',
+        ]
+    }
 )

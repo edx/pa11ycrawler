@@ -51,8 +51,8 @@ Transform to HTML
 =================
 
 This project comes with a script that can transform the data in this
-data directory into a pretty HTML table. The script is called
-`gen_html.py`, and it accepts two optional arguments: `--data-dir`
+data directory into a pretty HTML table. The script is installed as
+`pa11ycrawler-html` and it accepts two optional arguments: `--data-dir`
 and `--output-dir`. These arguments default to "data" and "html",
 respectively.
 
