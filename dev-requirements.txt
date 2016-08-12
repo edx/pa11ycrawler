@@ -1,0 +1,5 @@
+pytest>=2.7
+pytest-mock
+pycodestyle
+edx-lint==0.5.1
+pylint

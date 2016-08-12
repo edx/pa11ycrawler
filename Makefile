@@ -1,7 +1,7 @@
 .PHONY: requirements
 
 requirements: requirements.js
-	pip install .
+	pip install --quiet --upgrade -r requirements.txt --exists-action w
 
 requirements.js:
 	npm install
@@ -9,7 +9,7 @@ requirements.js:
 install: requirements
 
 develop: requirements
-	pip install -U pytest>=2.7 pytest-mock pycodestyle pylint edx-lint==0.5.1
+	pip install --quiet --upgrade -r dev-requirements.txt --exists-action w
 
 clean:
 	find . -name '*.pyc' -delete
