@@ -2,6 +2,7 @@
 
 requirements: requirements.js
 	pip install --quiet --upgrade -r requirements.txt --exists-action w
+	pip install .
 
 requirements.js:
 	npm install
