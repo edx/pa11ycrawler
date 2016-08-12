@@ -3,9 +3,9 @@ import json
 from datetime import datetime
 from StringIO import StringIO
 import subprocess as sp
-from scrapy.exceptions import DropItem
+from scrapy.exceptions import DropItem, NotConfigured
 from pa11ycrawler.pipelines import (
-    DuplicatesPipeline, DropDRFPipeline, Pa11yPipeline
+    DuplicatesPipeline, DropDRFPipeline, Pa11yPipeline, DEVNULL
 )
 
 
@@ -62,18 +62,28 @@ def test_drf_pipeline():
 
 
 def test_pa11y_happy_path(mocker, tmpdir):
-    pa11y_pl = Pa11yPipeline()
     # setup
     data_dir = tmpdir.mkdir("data")
     spider = mocker.Mock(data_dir=str(data_dir))
-    mock_process = mocker.Mock(returncode=None)
     fake_pa11y_data = {"pa11y": "output"}
-    def mock_communicate():
-        mock_process.returncode = 2
-        # returns both stdout and stderr
-        return json.dumps(fake_pa11y_data), ""
-    mock_process.communicate.side_effect = mock_communicate
-    mock_Popen = mocker.patch("subprocess.Popen", return_value=mock_process)
+
+    def popen_side_effect(args, *pos_args, **kwargs):
+        if "--version" in args:
+            version_process = mocker.Mock(returncode=None)
+            def mock_wait():
+                version_process.returncode = 0
+            version_process.wait.side_effect = mock_wait
+            return version_process
+        else:
+            run_process = mocker.Mock(returncode=None)
+            def mock_communicate():
+                run_process.returncode = 2
+                # returns both stdout and stderr
+                return json.dumps(fake_pa11y_data), ""
+            run_process.communicate.side_effect = mock_communicate
+            return run_process
+    mock_Popen = mocker.patch("subprocess.Popen", side_effect=popen_side_effect)
+
     mock_tempfile = StringIO()
     mock_tempfile.name = "mockconfig.json"
     mock_tempfile_ctor = mocker.patch(
@@ -89,6 +99,7 @@ def test_pa11y_happy_path(mocker, tmpdir):
     }
 
     # test
+    pa11y_pl = Pa11yPipeline()
     processed = pa11y_pl.process_item(item, spider)
 
     # check -------
@@ -113,3 +124,21 @@ def test_pa11y_happy_path(mocker, tmpdir):
     fake_pa11y_data["accessed_at"] = fake_pa11y_data["accessed_at"].isoformat()
     assert data_from_file == fake_pa11y_data
 
+    # config file should be created and destroyed
+    mock_remove.assert_called_with("mockconfig.json")
+
+
+def test_pa11y_not_installed(mocker):
+    mock_check_call = mocker.patch(
+        "subprocess.check_call", side_effect=OSError
+    )
+
+    with pytest.raises(NotConfigured) as err:
+        Pa11yPipeline()
+
+    assert "pa11y is not installed" in err.value.message
+
+    mock_check_call.assert_called_with(
+        ["node_modules/.bin/pa11y", "--version"],
+        stdout=DEVNULL, stderr=DEVNULL,
+    )

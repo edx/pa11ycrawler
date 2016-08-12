@@ -10,8 +10,10 @@ import tempfile
 import hashlib
 from urlobject import URLObject
 
-from scrapy.exceptions import DropItem
+from scrapy.exceptions import DropItem, NotConfigured
 from pa11ycrawler.util import DateTimeEncoder
+
+DEVNULL = open(os.devnull, 'wb')
 
 
 class DuplicatesPipeline(object):
@@ -65,6 +67,21 @@ class Pa11yPipeline(object):
     cli_flags = {
         "reporter": "1.0-json",
     }
+
+    def __init__(self):
+        "Check to be sure that `pa11y` is installed properly"
+        try:
+            sp.check_call(
+                [self.pa11y_path, "--version"],
+                stdout=DEVNULL, stderr=DEVNULL,
+            )
+        except OSError:
+            # No such file or directory
+            msg = (
+                "pa11y is not installed at {path}. "
+                "Run `npm install` to install it."
+            ).format(path=self.pa11y_path)
+            raise NotConfigured(msg)
 
     def write_pa11y_config(self, item):
         """
