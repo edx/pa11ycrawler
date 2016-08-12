@@ -1,8 +1,8 @@
 Overview
 ========
 
-pa11ycrawler a [Scrapy](http://doc.scrapy.org/en/latest/index.html)
-spider that calls [Pa11y](http://pa11y.org/) on every page of a locally-running
+pa11ycrawler is a [Scrapy](http://doc.scrapy.org/en/latest/index.html)
+spider that runs a [Pa11y](http://pa11y.org/) check on every page of an
 Open edX installation, to audit it for accessibility purposes.
 It will store the result of each page audit in a data directory as a set of
 JSON files, which can be transformed into a beautiful HTML report.
@@ -61,7 +61,7 @@ You can also run the script with the `--help` argument to get more information.
 Running Tests
 =============
 
-This project has tests for the pipeline functions, where are where the main
+This project has tests for the pipeline functions, where the main
 functionality of this crawler lives. To run those tests, run `py.test` or
 `make test`. You can also run `scrapy check edx` to test that the
 scraper is scraping data correctly.
