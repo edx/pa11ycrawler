@@ -2,14 +2,14 @@
 
 requirements: requirements.js
 	pip install --quiet --upgrade -r requirements.txt --exists-action w
-	pip install .
 
 requirements.js:
 	npm install
 
 install: requirements
+	python setup.py install
 
-develop: requirements
+develop: install
 	pip install --quiet --upgrade -r dev-requirements.txt --exists-action w
 
 clean:
@@ -19,6 +19,6 @@ test: clean
 	scrapy check edx
 	py.test
 
-quality:
+quality: develop
 	pycodestyle pa11ycrawler
 	pylint pa11ycrawler
