@@ -13,8 +13,7 @@ Installation
 pa11ycrawler requires Python 2.7 and Node.js installed.
 
 ```
-pip install .
-npm install
+make install
 ```
 
 Usage
@@ -32,7 +31,7 @@ Option       | Default                        | Example
 `domain`     | `localhost`                    | `scrapy crawl edx -a domain=edx.org`
 `port`       | `8000`                         | `scrapy crawl edx -a port=8003`
 `course_key` | `course-v1:edX+Test101+course` | `scrapy crawl edx -a course_key=org/course/run`
-`data_dir`   | `data`                         | `scrapy crawl edx -a data_dir=~/pa11y-data`
+`data_dir`   | `/var/opt/pa11ycrawler/data`   | `scrapy crawl edx -a data_dir=~/pa11y-data`
 
 These options can be combined by specifying the `-a` flag multiple times.
 For example, `scrapy crawl edx -a domain=courses.edx.org -a port=80`.
@@ -53,10 +52,25 @@ Transform to HTML
 This project comes with a script that can transform the data in this
 data directory into a pretty HTML table. The script is installed as
 `pa11ycrawler-html` and it accepts two optional arguments: `--data-dir`
-and `--output-dir`. These arguments default to "data" and "html",
-respectively.
+and `--output-dir`. These arguments default to "/var/opt/pa11ycrawler/data"
+and "/var/opt/pa11ycrawler/html", respectively.
 
 You can also run the script with the `--help` argument to get more information.
+
+Cleaning Data
+=============
+
+This project comes with a `Makefile` with a `clean` task. If you run it, it
+will delete everything under `/var/opt/pa11ycrawler`, which is the
+default location for pa11ycrawler's data and HTML. However, if you configure
+pa11ycrawler to output data and/or HTML to a different location, this task
+has no way of knowing where the data and HTML are located on your computer,
+and will not be able to automatically remove them for you.
+
+To remove data and HTML from the default location, run:
+```
+make clean
+```
 
 Running Tests
 =============

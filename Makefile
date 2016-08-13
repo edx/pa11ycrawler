@@ -14,6 +14,7 @@ develop: install
 
 clean:
 	find . -name '*.pyc' -delete
+	rm -rf /var/opt/pa11ycrawler
 
 test: clean
 	scrapy check edx
