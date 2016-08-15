@@ -1,109 +1,89 @@
 Overview
 ========
 
-pa11ycrawler is a python command line tool built using [Scrapy](http://doc.scrapy.org/en/latest/index.html) and [Pa11y](http://pa11y.org/) for
-crawling a website and storing a Pa11y report for each page.
-
-The reports can be in the form of any of Pa11y's default report types or [1.0-json](https://github.com/springernature/pa11y-reporter-1.0-json).  There is an additional command to produce html reports from the 1.0-json.
+pa11ycrawler is a [Scrapy](http://doc.scrapy.org/en/latest/index.html)
+spider that runs a [Pa11y](http://pa11y.org/) check on every page of an
+Open edX installation, to audit it for accessibility purposes.
+It will store the result of each page audit in a data directory as a set of
+JSON files, which can be transformed into a beautiful HTML report.
 
 Installation
 ============
 
-Prereqs
--------
+pa11ycrawler requires Python 2.7 and Node.js installed.
 
-* python (v2.7)
-* node.js
-
-Install node Requirements
--------------------------
 ```
-npm install -g pa11y@3.6.0 pa11y-reporter-1.0-json@1.0.2
+make install
 ```
-
-Install via GitHub
-------------------
-```
-pip install git+https://github.com/edx/pa11ycrawler.git
-```
-
-Install via PyPi
-----------------
-TODO
-
 
 Usage
 =====
 
-Basic usage
------------
-For help:
-
 ```
-pa11ycrawler -h
+scrapy crawl edx
 ```
 
-Running the crawler
--------------------
+There are several options for this spider that you can configure using the
+`-a` scrapy flag.
 
-To run the crawler, producing json reports
+Option       | Default                        | Example
+------------ | ------------------------------ | -------
+`domain`     | `localhost`                    | `scrapy crawl edx -a domain=edx.org`
+`port`       | `8000`                         | `scrapy crawl edx -a port=8003`
+`course_key` | `course-v1:edX+Test101+course` | `scrapy crawl edx -a course_key=org/course/run`
+`data_dir`   | `data`                         | `scrapy crawl edx -a data_dir=~/pa11y-data`
+
+These options can be combined by specifying the `-a` flag multiple times.
+For example, `scrapy crawl edx -a domain=courses.edx.org -a port=80`.
+
+The `data_dir` option is used to determine where this crawler will save its
+output. pa11ycrawler will run each page of the site through `pa11y`,
+encode the result as JSON, and save it as a file in this directory.
+This data directory is "data" by default, which means it will create a directory
+named "data" in whatever directory you run the crawler from.
+Whatever directory you specify, it will be automatically created if it does
+not yet exist. The crawler will never delete data from the data directory,
+so if you want to clear it out between runs, that's your responsibility.
+There is a `make clean-data` task available in the Makefile, which just runs
+`rm -rf data`.
+
+Transform to HTML
+=================
+
+This project comes with a script that can transform the data in this
+data directory into a pretty HTML table. The script is installed as
+`pa11ycrawler-html` and it accepts two optional arguments: `--data-dir`
+and `--output-dir`. These arguments default to "data"
+and "html", respectively.
+
+You can also run the script with the `--help` argument to get more information.
+
+Cleaning Data & HTML
+====================
+
+This project comes with a `Makefile` with a `clean-data` task and a `clean-html`
+task. The former will delete the `data` directory in the current working
+directory, and the latter will delete the `html` directory in the current
+working directory. These are the default locations for pa11ycrawler's data and
+HTML. However, if you configure pa11ycrawler to output data and/or HTML
+to a different location, this task has no way of knowing where
+the data and HTML are located on your computer,
+and will not be able to automatically remove them for you.
+
+To remove data from the default location, run:
 ```
-pa11ycrawler run $START_URL --pa11ycrawler-allowed-domains=$ALLOWED_DOMAINS --pa11y-reporter='1.0-json'
+make clean-data
+
 ```
-
-NOTE: You probably want to make sure that `--pa11ycrawler-allowed-domains` is set, or you may start crawling external sites.
-
-For more options:
+To remove HTML from the default location, run:
 ```
-pa11ycrawler run -h
-```
-
-
-Produce html reports from the 1.0-json reports
-----------------------------------------------
-
-
-To run the crawler, producing json reports
-```
-pa11ycrawler json-to-html
-```
-
-For more options:
-```
-pa11ycrawler json-to-html -h
-```
-
-
-Development
-===========
-
-Prereqs
--------
-
-* python (v2.7)
-* node.js
-* make
-
-Get the code
-------------
-```
-git clone https://github.com/edx/pa11ycrawler.git
-```
-
-Install python and node requirements
-------------------------------------
-```
-make develop
-```
-
-Running unit tests
--------------
-```
-make test
+make clean-html
 ```
 
-Checking code quality (pep8 and pylint)
----------------------------------------
-```
-make quality
-```
+Running Tests
+=============
+
+This project has tests for the pipeline functions, where the main
+functionality of this crawler lives. To run those tests, run `py.test` or
+`make test`. You can also run `scrapy check edx` to test that the
+scraper is scraping data correctly.

@@ -64,6 +64,8 @@ target/
 # Node
 node_modules/
 
-# pa11ycrawler_reports
-pa11ycrawler_reports/
-test_root/
+# output data
+data/
+
+# other
+.DS_Store

@@ -10,16 +10,10 @@ from scrapy.item import Item, Field
 
 class A11yItem(Item):
     """
-    Fields for an item scraped with pa11y:
-    * url (url visited)
-    * filename (md5 hash of url)
-    * headers (passed to pa11y)
-    * results (pa11y results)
-    * source (source html)
+    The output of scraping each page. These are the only pieces of data we
+    care about for a given page.
     """
     url = Field()
+    request_headers = Field()
+    accessed_at = Field()
     page_title = Field()
-    filename = Field()
-    headers = Field()
-    results = Field()
-    source = Field()
