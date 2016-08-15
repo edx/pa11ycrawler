@@ -24,9 +24,9 @@ setup(
     version='1.0.0',
     package_data={
         'pa11ycrawler': [
-            'templates/*.*',
-            'templates/assets/js/*.*',
-            'templates/assets/css/*.*',
+            'templates/*',
+            'templates/assets/js/*',
+            'templates/assets/css/*',
         ]
     },
     packages=[
