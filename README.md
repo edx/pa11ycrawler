@@ -31,7 +31,7 @@ Option       | Default                        | Example
 `domain`     | `localhost`                    | `scrapy crawl edx -a domain=edx.org`
 `port`       | `8000`                         | `scrapy crawl edx -a port=8003`
 `course_key` | `course-v1:edX+Test101+course` | `scrapy crawl edx -a course_key=org/course/run`
-`data_dir`   | `/var/opt/pa11ycrawler/data`   | `scrapy crawl edx -a data_dir=~/pa11y-data`
+`data_dir`   | `data`                         | `scrapy crawl edx -a data_dir=~/pa11y-data`
 
 These options can be combined by specifying the `-a` flag multiple times.
 For example, `scrapy crawl edx -a domain=courses.edx.org -a port=80`.
@@ -42,9 +42,10 @@ encode the result as JSON, and save it as a file in this directory.
 This data directory is "data" by default, which means it will create a directory
 named "data" in whatever directory you run the crawler from.
 Whatever directory you specify, it will be automatically created if it does
-not yet exist. In addition, this tool will never delete data from the data
-directory, so if you want to clear it out between runs, that's your
-responsibility!
+not yet exist. The crawler will never delete data from the data directory,
+so if you want to clear it out between runs, that's your responsibility.
+There is a `make clean-data` task available in the Makefile, which just runs
+`rm -rf data`.
 
 Transform to HTML
 =================
@@ -52,24 +53,31 @@ Transform to HTML
 This project comes with a script that can transform the data in this
 data directory into a pretty HTML table. The script is installed as
 `pa11ycrawler-html` and it accepts two optional arguments: `--data-dir`
-and `--output-dir`. These arguments default to "/var/opt/pa11ycrawler/data"
-and "/var/opt/pa11ycrawler/html", respectively.
+and `--output-dir`. These arguments default to "data"
+and "html", respectively.
 
 You can also run the script with the `--help` argument to get more information.
 
-Cleaning Data
-=============
+Cleaning Data & HTML
+====================
 
-This project comes with a `Makefile` with a `clean` task. If you run it, it
-will delete everything under `/var/opt/pa11ycrawler`, which is the
-default location for pa11ycrawler's data and HTML. However, if you configure
-pa11ycrawler to output data and/or HTML to a different location, this task
-has no way of knowing where the data and HTML are located on your computer,
+This project comes with a `Makefile` with a `clean-data` task and a `clean-html`
+task. The former will delete the `data` directory in the current working
+directory, and the latter will delete the `html` directory in the current
+working directory. These are the default locations for pa11ycrawler's data and
+HTML. However, if you configure pa11ycrawler to output data and/or HTML
+to a different location, this task has no way of knowing where
+the data and HTML are located on your computer,
 and will not be able to automatically remove them for you.
 
-To remove data and HTML from the default location, run:
+To remove data from the default location, run:
 ```
-make clean
+make clean-data
+
+```
+To remove HTML from the default location, run:
+```
+make clean-html
 ```
 
 Running Tests

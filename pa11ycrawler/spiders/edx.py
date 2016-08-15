@@ -39,7 +39,7 @@ class EdxSpider(CrawlSpider):
             domain="localhost",
             port="8000",
             course_key="course-v1:edX+Test101+course",
-            data_dir="/var/opt/pa11ycrawler/data",
+            data_dir="data",
         ):  # noqa
         self.allowed_domains = [domain]
         port = int(port)
