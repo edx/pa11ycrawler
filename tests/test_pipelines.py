@@ -86,6 +86,9 @@ def test_pa11y_happy_path(mocker, tmpdir):
 
     mock_tempfile = StringIO()
     mock_tempfile.name = "mockconfig.json"
+    # stub out the `.close()` method, so that we can re-read this data
+    # later in the test
+    mock_tempfile.close = lambda: None
     mock_tempfile_ctor = mocker.patch(
         "tempfile.NamedTemporaryFile",
         return_value=mock_tempfile,
@@ -125,6 +128,16 @@ def test_pa11y_happy_path(mocker, tmpdir):
     assert data_from_file == fake_pa11y_data
 
     # config file should be created and destroyed
+    mock_tempfile.seek(0)
+    pa11y_config = json.load(mock_tempfile)
+    expected_config = {
+        "page": {
+            "headers": {
+                "Cookie": ["nocookieforyou"],
+            }
+        }
+    }
+    assert pa11y_config == expected_config
     mock_remove.assert_called_with("mockconfig.json")
 
 
