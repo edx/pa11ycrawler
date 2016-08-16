@@ -62,10 +62,24 @@ def test_drf_pipeline():
 
 
 def test_pa11y_happy_path(mocker, tmpdir):
+    item = {
+        "url": "http://courses.edx.org/fakepage",
+        "page_title": "This is a Fake Page",
+        "request_headers": {"Cookie": "nocookieforyou"},
+        "accessed_at": datetime(2016, 8, 20, 14, 12, 45),
+    }
+    fake_pa11y_data = {
+        "results": [{
+            "message": "Check that the title element describes the document.",
+            "code": "WCAG2AA.Principle2.Guideline2_4.2_4_2.H25.2",
+            "type": "notice",
+            "html": "<title>\t\nThis is a Fake Pa...</title>"
+        }]
+    }
+
     # setup
     data_dir = tmpdir.mkdir("data")
     spider = mocker.Mock(data_dir=str(data_dir))
-    fake_pa11y_data = {"pa11y": "output"}
 
     def popen_side_effect(args, *pos_args, **kwargs):
         if "--version" in args:
@@ -94,12 +108,6 @@ def test_pa11y_happy_path(mocker, tmpdir):
         return_value=mock_tempfile,
     )
     mock_remove = mocker.patch("os.remove")
-    item = {
-        "url": "http://courses.edx.org/fakepage",
-        "page_title": "This is a Fake Page",
-        "request_headers": {"Cookie": ["nocookieforyou"]},
-        "accessed_at": datetime(2016, 8, 20, 14, 12, 45),
-    }
 
     # test
     pa11y_pl = Pa11yPipeline()
@@ -117,6 +125,9 @@ def test_pa11y_happy_path(mocker, tmpdir):
         shell=False, stdout=sp.PIPE, stderr=sp.PIPE
     )
 
+    # title matcher didn't see a problem
+    assert not spider.logger.error.called
+
     # one data file should be output correctly
     data_files = data_dir.listdir()
     assert len(data_files) == 1
@@ -133,7 +144,7 @@ def test_pa11y_happy_path(mocker, tmpdir):
     expected_config = {
         "page": {
             "headers": {
-                "Cookie": ["nocookieforyou"],
+                "Cookie": "nocookieforyou",
             }
         }
     }
@@ -155,3 +166,57 @@ def test_pa11y_not_installed(mocker):
         ["node_modules/.bin/pa11y", "--version"],
         stdout=DEVNULL, stderr=DEVNULL,
     )
+
+
+def test_pa11y_title_mismatch(mocker, tmpdir):
+    item = {
+        "url": "http://courses.edx.org/ponies",
+        "page_title": "Sparkly Ponies of Joy",
+        "request_headers": {"Cookie": "nocookieforyou"},
+        "accessed_at": datetime(2016, 8, 20, 14, 12, 45),
+    }
+    fake_pa11y_data = {
+        "results": [{
+            "message": "Check that the title element describes the document.",
+            "code": "WCAG2AA.Principle2.Guideline2_4.2_4_2.H25.2",
+            "type": "notice",
+            "html": "<title>Evil Demons of Despa...</title>"
+        }]
+    }
+
+    # setup
+    data_dir = tmpdir.mkdir("data")
+    spider = mocker.Mock(data_dir=str(data_dir))
+
+    # fake subprocess
+    def popen_side_effect(args, *pos_args, **kwargs):
+        if "--version" in args:
+            version_process = mocker.Mock(returncode=None)
+            def mock_wait():
+                version_process.returncode = 0
+            version_process.wait.side_effect = mock_wait
+            return version_process
+        else:
+            run_process = mocker.Mock(returncode=None)
+            def mock_communicate():
+                run_process.returncode = 2
+                # returns both stdout and stderr
+                return json.dumps(fake_pa11y_data), ""
+            run_process.communicate.side_effect = mock_communicate
+            return run_process
+    mocker.patch("subprocess.Popen", side_effect=popen_side_effect)
+
+    # stub out config file creation/removal
+    mocker.patch("tempfile.NamedTemporaryFile")
+    mocker.patch("os.remove")
+
+    # test
+    pa11y_pl = Pa11yPipeline()
+    pa11y_pl.process_item(item, spider)
+
+    # check
+    expected_msg = (
+        'Parser mismatch! Scrapy saw full title "Sparkly Ponies of Joy", '
+        'Pa11y saw elided title "Evil Demons of Despa...".'
+    )
+    spider.logger.error.assert_called_with(expected_msg)

@@ -9,6 +9,7 @@ import subprocess as sp
 import tempfile
 import hashlib
 from urlobject import URLObject
+from lxml import html
 
 from scrapy.exceptions import DropItem, NotConfigured
 from pa11ycrawler.util import DateTimeEncoder
@@ -108,6 +109,44 @@ class Pa11yPipeline(object):
         config_file.close()
         return config_file
 
+    def check_title_match(self, expected_title, pa11y_output, logger):
+        """
+        Check if Scrapy reports any issue with the HTML <title> element.
+        If so, compare that <title> element to the title that we got in the
+        A11yItem. If they don't match, something is screwy, and pa11y isn't
+        parsing the page that we expect.
+        """
+        if not pa11y_output:
+            # no output from pa11y, nothing to check.
+            return
+        pa11y_results = json.loads(pa11y_output).get("results")
+        if not pa11y_results:
+            return
+        title_errs = [err for err in pa11y_results
+                      if err["html"].startswith("<title")]
+        for err in title_errs:
+            title_elmt = html.fragment_fromstring(err["html"])
+            # pa11ycrawler will elide the title, so grab whatever true
+            # content we can from the output
+            elided_title = title_elmt.text.strip()
+            if elided_title.endswith("..."):
+                pa11y_title = elided_title[0:-3]
+            else:
+                pa11y_title = elided_title
+
+            # check that they match -- the elided version should be a substring
+            # of the full version
+            if pa11y_title not in expected_title:
+                # whoa, something's screwy!
+                msg = (
+                    'Parser mismatch! '
+                    'Scrapy saw full title "{scrapy_title}", '
+                    'Pa11y saw elided title "{elided_title}".'
+                ).format(
+                    scrapy_title=expected_title, elided_title=elided_title,
+                )
+                logger.error(msg)
+
     def write_pa11y_results(self, item, results, data_dir):
         """
         Write the output from pa11y into a data file.
@@ -182,6 +221,7 @@ class Pa11yPipeline(object):
                 )
             )
 
+        self.check_title_match(item['page_title'], stdout, spider.logger)
         os.remove(config_file.name)
         self.write_pa11y_results(item, stdout, spider.data_dir)
         return item
