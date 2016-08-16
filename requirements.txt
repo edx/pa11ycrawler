@@ -1,4 +1,4 @@
-mako>=1.0.2
-scrapy>=1.0.5
-urlobject
-lxml
+mako==1.0.4
+scrapy==1.1.1
+urlobject<3.0
+lxml<4.0
