@@ -85,9 +85,17 @@ class EdxSpider(CrawlSpider):
         @scrapes url request_headers accessed_at page_title
         """
         title = response.xpath("//title/text()").extract_first().strip()
+        # `response.request.headers` is a dictionary where the key is the
+        # header name, and the value is a *list*, containing one item,
+        # which is the header value. We need to get rid of this list, and just
+        # have key-value pairs. (This list probably exists in case the same
+        # header is sent multiple times, but that's not happening in this case,
+        # and the list construct is getting in the way.)
+        request_headers = {key: value[0] for key, value
+                           in response.request.headers.items()}
         item = A11yItem(
             url=response.url,
-            request_headers=response.request.headers,
+            request_headers=request_headers,
             accessed_at=datetime.utcnow(),
             page_title=title,
         )
