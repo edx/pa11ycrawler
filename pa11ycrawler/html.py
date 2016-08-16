@@ -4,6 +4,7 @@ report.
 """
 import os
 import os.path
+import io
 import re
 import argparse
 import shutil
@@ -118,7 +119,7 @@ def render_html(data_dir, output_dir):
             continue
 
         data_path = os.path.join(data_dir, fname)
-        data = json.load(open(data_path))
+        data = json.load(io.open(data_path, encoding="utf-8"))
         context = {
             'url': data["url"],
             'info': data,
@@ -130,7 +131,7 @@ def render_html(data_dir, output_dir):
         # replace `.json` with `.html`
         fname = fname[:-5] + ".html"
         html_path = os.path.join(output_dir, fname)
-        with open(html_path, "w") as f:
+        with io.open(html_path, "w", encoding="utf-8") as f:
             f.write(rendered_html)
 
         data["filename"] = fname
@@ -146,7 +147,7 @@ def render_html(data_dir, output_dir):
     }
     rendered_html = index_template.render(**context)
     html_path = os.path.join(output_dir, "index.html")
-    with open(html_path, 'w') as f:
+    with io.open(html_path, 'w', encoding="utf-8") as f:
         f.write(rendered_html)
 
 
