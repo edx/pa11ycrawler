@@ -30,11 +30,18 @@ Option       | Default                        | Example
 ------------ | ------------------------------ | -------
 `domain`     | `localhost`                    | `scrapy crawl edx -a domain=edx.org`
 `port`       | `8000`                         | `scrapy crawl edx -a port=8003`
+`email`      | None                           | `scrapy crawl edx -a email=staff@example.com -a password=edx`
+`password`   | None                           | (see above)
 `course_key` | `course-v1:edX+Test101+course` | `scrapy crawl edx -a course_key=org/course/run`
 `data_dir`   | `data`                         | `scrapy crawl edx -a data_dir=~/pa11y-data`
 
 These options can be combined by specifying the `-a` flag multiple times.
 For example, `scrapy crawl edx -a domain=courses.edx.org -a port=80`.
+
+If an email and password are not specified, then pa11ycrawler will use the
+"auto auth" feature in Open edX to create a staff user, and crawl as that user.
+Note that this assumes that the "auto auth" feature is enabled -- if not, the
+crawler won't be able to crawl without an email and password set.
 
 The `data_dir` option is used to determine where this crawler will save its
 output. pa11ycrawler will run each page of the site through `pa11y`,
