@@ -2,8 +2,10 @@
 A spider that can crawl an Open edX instance.
 """
 import os
+import json
 from datetime import datetime
 from urlobject import URLObject
+import scrapy
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from pa11ycrawler.items import A11yItem
@@ -38,41 +40,84 @@ class EdxSpider(CrawlSpider):
             self,
             domain="localhost",
             port="8000",
+            email=None,
+            password=None,
             course_key="course-v1:edX+Test101+course",
             data_dir="data",
         ):  # noqa
-        self.allowed_domains = [domain]
-        port = int(port)
+        super(EdxSpider, self).__init__()
+
+        self.login_email = email
+        self.login_password = password
+        self.domain = domain
+        self.port = int(port)
+        self.course_key = course_key
+        self.data_dir = os.path.abspath(os.path.expanduser(data_dir))
 
         # set start URL based on course_key, which is the test course by default
         api_url = (
             URLObject("http://")
-            .with_hostname(domain)
-            .with_port(port)
+            .with_hostname(self.domain)
+            .with_port(self.port)
             .with_path(COURSE_BLOCKS_API_PATH)
             .set_query_params(
-                course_id=course_key,
+                course_id=self.course_key,
                 depth="all",
                 all_blocks="true",
             )
         )
-        auth_url = (
-            URLObject("http://")
-            .with_hostname(domain)
-            .with_port(port)
-            .with_path(AUTO_AUTH_PATH)
-            .set_query_params(
-                staff='true',
-                course_id=course_key,
-                redirect="true",
-                redirect_to=api_url,
+        self.start_urls = [api_url]
+        self.allowed_domains = [domain]
+
+    def start_requests(self):
+        """
+        Gets the spider started.
+        If both `self.login_email` and `self.login_password` are set, this
+        method generates requests from `self.start_urls`. If not, this method
+        gets credentials using the "auto auth" feature, and *then* generates
+        requests from `self.start_urls`.
+        """
+        if self.login_email and self.login_password:
+            for url in self.start_urls:
+                yield self.make_requests_from_url(url)
+        else:
+            self.logger.info(
+                "email/password unset, fetching credentials via auto_auth"
             )
-        )
-        self.start_urls = [auth_url]
+            auth_url = (
+                URLObject("http://")
+                .with_hostname(self.domain)
+                .with_port(self.port)
+                .with_path(AUTO_AUTH_PATH)
+                .set_query_params(
+                    staff='true',
+                    course_id=self.course_key,
+                )
+            )
+            # make sure to request a parseable JSON response
+            yield scrapy.Request(
+                auth_url,
+                headers={"Accept": "application/json"},
+                callback=self.parse_auto_auth,
+            )
 
-        super(EdxSpider, self).__init__()
+    def parse_auto_auth(self, response):
+        """
+        Parse the response from the "auto auth" feature.
+        Once we have an email and password, move on to the
+        `self.start_urls` list.
+        """
+        result = json.loads(response.body)
+        self.login_email = result["email"]
+        self.login_password = result["password"]
+        msg = (
+            "Obtained credentials via auto_auth! "
+            "email={email} password={password}"
+        ).format(**result)
+        self.logger.info(msg)
 
-        self.data_dir = os.path.abspath(os.path.expanduser(data_dir))
+        for url in self.start_urls:
+            yield self.make_requests_from_url(url)
 
     def parse_item(self, response):
         """
@@ -84,6 +129,10 @@ class EdxSpider(CrawlSpider):
         @returns requests 0 0
         @scrapes url request_headers accessed_at page_title
         """
+        # if we got redirected to a login page, then login
+        if URLObject(response.url).path in ("/login", "/register"):
+            yield self.make_login_request(response)
+
         title = response.xpath("//title/text()").extract_first().strip()
         # `response.request.headers` is a dictionary where the key is the
         # header name, and the value is a *list*, containing one item,
@@ -99,4 +148,28 @@ class EdxSpider(CrawlSpider):
             accessed_at=datetime.utcnow(),
             page_title=title,
         )
-        return item
+        yield item
+
+    def make_login_request(self, response):
+        """
+        If the page wants me to log in, then I'll log in!
+        """
+        credentials = {
+            "email": self.login_email,
+            "password": self.login_password,
+        }
+        return scrapy.FormRequest.from_response(
+            response,
+            formdata=credentials
+        )
+
+    def after_login(self, response):
+        """
+        Check for a login error, then proceed as normal.
+        """
+        if "We couldn't sign you in." in response.body:
+            self.logger.error("Credentials failed!")
+            return
+
+        for item in self.parse_item(response):
+            yield item
