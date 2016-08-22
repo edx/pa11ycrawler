@@ -1,5 +1,6 @@
 pytest>=2.7
 pytest-mock
+freezegun==0.3.7
 pycodestyle
 edx-lint==0.5.1
 pylint
