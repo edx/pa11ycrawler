@@ -35,6 +35,7 @@ setup(
     ],
     install_requires=get_requirements("requirements.txt"),
     tests_require=get_requirements("dev-requirements.txt"),
+    license="Apache-2.0",
     entry_points={
         'console_scripts': [
             'pa11ycrawler-html=pa11ycrawler.html:main',
