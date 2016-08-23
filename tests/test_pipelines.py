@@ -1,12 +1,15 @@
 import pytest
 import json
 from datetime import datetime
-from StringIO import StringIO
 import subprocess as sp
 from scrapy.exceptions import DropItem, NotConfigured
 from pa11ycrawler.pipelines import (
     DuplicatesPipeline, DropDRFPipeline, Pa11yPipeline, DEVNULL
 )
+try:
+    from StringIO import StringIO
+except ImportError:  # Python 3
+    from io import StringIO
 
 
 def test_duplicates_pipeline():
@@ -81,22 +84,17 @@ def test_pa11y_happy_path(mocker, tmpdir):
     data_dir = tmpdir.mkdir("data")
     spider = mocker.Mock(data_dir=str(data_dir))
 
-    def popen_side_effect(args, *pos_args, **kwargs):
-        if "--version" in args:
-            version_process = mocker.Mock(returncode=None)
-            def mock_wait():
-                version_process.returncode = 0
-            version_process.wait.side_effect = mock_wait
-            return version_process
-        else:
-            run_process = mocker.Mock(returncode=None)
-            def mock_communicate():
-                run_process.returncode = 2
-                # returns both stdout and stderr
-                return json.dumps(fake_pa11y_data), ""
-            run_process.communicate.side_effect = mock_communicate
-            return run_process
-    mock_Popen = mocker.patch("subprocess.Popen", side_effect=popen_side_effect)
+    # fake subprocess: version
+    mocker.patch("subprocess.check_call")
+
+    # fake subprocess: run pa11y
+    pa11y_process = mocker.Mock(name="run-Popen", returncode=None)
+    def mock_communicate():
+        pa11y_process.returncode = 2
+        # returns both stdout and stderr
+        return json.dumps(fake_pa11y_data), ""
+    pa11y_process.communicate.side_effect = mock_communicate
+    mock_Popen = mocker.patch("subprocess.Popen", return_value=pa11y_process)
 
     mock_tempfile = StringIO()
     mock_tempfile.name = "mockconfig.json"
@@ -160,7 +158,7 @@ def test_pa11y_not_installed(mocker):
     with pytest.raises(NotConfigured) as err:
         Pa11yPipeline()
 
-    assert "pa11y is not installed" in err.value.message
+    assert "pa11y is not installed" in err.value.args[0]
 
     mock_check_call.assert_called_with(
         ["node_modules/.bin/pa11y", "--version"],
@@ -188,23 +186,17 @@ def test_pa11y_title_mismatch(mocker, tmpdir):
     data_dir = tmpdir.mkdir("data")
     spider = mocker.Mock(data_dir=str(data_dir))
 
-    # fake subprocess
-    def popen_side_effect(args, *pos_args, **kwargs):
-        if "--version" in args:
-            version_process = mocker.Mock(returncode=None)
-            def mock_wait():
-                version_process.returncode = 0
-            version_process.wait.side_effect = mock_wait
-            return version_process
-        else:
-            run_process = mocker.Mock(returncode=None)
-            def mock_communicate():
-                run_process.returncode = 2
-                # returns both stdout and stderr
-                return json.dumps(fake_pa11y_data), ""
-            run_process.communicate.side_effect = mock_communicate
-            return run_process
-    mocker.patch("subprocess.Popen", side_effect=popen_side_effect)
+    # fake subprocess: version
+    mocker.patch("subprocess.check_call")
+
+    # fake subprocess: run pa11y
+    pa11y_process = mocker.Mock(name="run-Popen", returncode=None)
+    def mock_communicate():
+        pa11y_process.returncode = 2
+        # returns both stdout and stderr
+        return json.dumps(fake_pa11y_data), ""
+    pa11y_process.communicate.side_effect = mock_communicate
+    mocker.patch("subprocess.Popen", return_value=pa11y_process)
 
     # stub out config file creation/removal
     mocker.patch("tempfile.NamedTemporaryFile")

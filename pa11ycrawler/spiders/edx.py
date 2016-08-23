@@ -97,7 +97,7 @@ class EdxSpider(CrawlSpider):
             # make sure to request a parseable JSON response
             yield scrapy.Request(
                 auth_url,
-                headers={"Accept": "application/json"},
+                headers={b"Accept": b"application/json"},
                 callback=self.parse_auto_auth,
             )
 
