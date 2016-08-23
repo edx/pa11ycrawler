@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/edx/pa11ycrawler.svg?branch=master)](https://travis-ci.org/edx/pa11ycrawler)
+
 Overview
 ========
 
