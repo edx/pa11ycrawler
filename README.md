@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/edx/pa11ycrawler.svg?branch=master)](https://travis-ci.org/edx/pa11ycrawler)
 
-Overview
-========
+Pa11ycrawler
+============
 
 pa11ycrawler is a [Scrapy](http://doc.scrapy.org/en/latest/index.html)
 spider that runs a [Pa11y](http://pa11y.org/) check on every page of an
