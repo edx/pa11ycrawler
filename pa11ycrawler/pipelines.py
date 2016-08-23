@@ -161,8 +161,8 @@ class Pa11yPipeline(object):
         # and throw in the access time so that we can store the same URL
         # multiple times in this data directory
         hasher = hashlib.md5()
-        hasher.update(item["url"])
-        hasher.update(item["accessed_at"].isoformat())
+        hasher.update(item["url"].encode('utf8'))
+        hasher.update(item["accessed_at"].isoformat().encode('utf8'))
         basename = hasher.hexdigest()
         filename = basename + ".json"
         filepath = os.path.join(data_dir, filename)

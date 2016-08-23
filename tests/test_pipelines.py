@@ -1,7 +1,7 @@
 import pytest
 import json
 from datetime import datetime
-from StringIO import StringIO
+from io import StringIO
 import subprocess as sp
 from scrapy.exceptions import DropItem, NotConfigured
 from pa11ycrawler.pipelines import (
@@ -83,13 +83,16 @@ def test_pa11y_happy_path(mocker, tmpdir):
 
     def popen_side_effect(args, *pos_args, **kwargs):
         if "--version" in args:
-            version_process = mocker.Mock(returncode=None)
-            def mock_wait():
-                version_process.returncode = 0
-            version_process.wait.side_effect = mock_wait
+            version_process = mocker.MagicMock(
+                name="version-Popen", returncode=None
+            )
+            with version_process as proc_ctx:
+                def mock_wait(timeout=None):
+                    proc_ctx.returncode = 0
+                proc_ctx.wait.side_effect = mock_wait
             return version_process
         else:
-            run_process = mocker.Mock(returncode=None)
+            run_process = mocker.Mock(name="run-Popen", returncode=None)
             def mock_communicate():
                 run_process.returncode = 2
                 # returns both stdout and stderr
@@ -160,7 +163,7 @@ def test_pa11y_not_installed(mocker):
     with pytest.raises(NotConfigured) as err:
         Pa11yPipeline()
 
-    assert "pa11y is not installed" in err.value.message
+    assert "pa11y is not installed" in err.value.args[0]
 
     mock_check_call.assert_called_with(
         ["node_modules/.bin/pa11y", "--version"],
@@ -191,13 +194,16 @@ def test_pa11y_title_mismatch(mocker, tmpdir):
     # fake subprocess
     def popen_side_effect(args, *pos_args, **kwargs):
         if "--version" in args:
-            version_process = mocker.Mock(returncode=None)
-            def mock_wait():
-                version_process.returncode = 0
-            version_process.wait.side_effect = mock_wait
+            version_process = mocker.MagicMock(
+                name="version-Popen", returncode=None
+            )
+            with version_process as proc_ctx:
+                def mock_wait(timeout=None):
+                    proc_ctx.returncode = 0
+                proc_ctx.wait.side_effect = mock_wait
             return version_process
         else:
-            run_process = mocker.Mock(returncode=None)
+            run_process = mocker.Mock(name="run-Popen", returncode=None)
             def mock_communicate():
                 run_process.returncode = 2
                 # returns both stdout and stderr
