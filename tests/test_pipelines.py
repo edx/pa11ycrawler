@@ -1,12 +1,15 @@
 import pytest
 import json
 from datetime import datetime
-from io import StringIO
 import subprocess as sp
 from scrapy.exceptions import DropItem, NotConfigured
 from pa11ycrawler.pipelines import (
     DuplicatesPipeline, DropDRFPipeline, Pa11yPipeline, DEVNULL
 )
+try:
+    from StringIO import StringIO
+except ImportError:  # Python 3
+    from io import StringIO
 
 
 def test_duplicates_pipeline():
