@@ -12,7 +12,7 @@ JSON files, which can be transformed into a beautiful HTML report.
 Installation
 ============
 
-pa11ycrawler requires Python 2.7 and Node.js installed.
+pa11ycrawler requires Python 2.7+ and Node.js installed.
 
 ```
 make install
