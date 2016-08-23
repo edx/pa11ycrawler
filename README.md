@@ -82,7 +82,6 @@ and will not be able to automatically remove them for you.
 To remove data from the default location, run:
 ```
 make clean-data
-
 ```
 To remove HTML from the default location, run:
 ```
