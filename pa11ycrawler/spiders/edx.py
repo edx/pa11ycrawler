@@ -107,7 +107,7 @@ class EdxSpider(CrawlSpider):
         Once we have an email and password, move on to the
         `self.start_urls` list.
         """
-        result = json.loads(response.body)
+        result = json.loads(response.text)
         self.login_email = result["email"]
         self.login_password = result["password"]
         msg = (
@@ -140,7 +140,12 @@ class EdxSpider(CrawlSpider):
         # have key-value pairs. (This list probably exists in case the same
         # header is sent multiple times, but that's not happening in this case,
         # and the list construct is getting in the way.)
-        request_headers = {key: value[0] for key, value
+        #
+        # We also need to convert bytes to ASCII. In practice, headers can
+        # only contain ASCII characters: see
+        # http://stackoverflow.com/questions/5423223/how-to-send-non-english-unicode-string-using-http-header
+        request_headers = {key.decode('ascii'): value[0].decode('ascii')
+                           for key, value
                            in response.request.headers.items()}
         item = A11yItem(
             url=response.url,

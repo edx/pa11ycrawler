@@ -92,7 +92,7 @@ def test_pa11y_happy_path(mocker, tmpdir):
     def mock_communicate():
         pa11y_process.returncode = 2
         # returns both stdout and stderr
-        return json.dumps(fake_pa11y_data), ""
+        return json.dumps(fake_pa11y_data).encode('utf8'), b""
     pa11y_process.communicate.side_effect = mock_communicate
     mock_Popen = mocker.patch("subprocess.Popen", return_value=pa11y_process)
 
@@ -194,7 +194,7 @@ def test_pa11y_title_mismatch(mocker, tmpdir):
     def mock_communicate():
         pa11y_process.returncode = 2
         # returns both stdout and stderr
-        return json.dumps(fake_pa11y_data), ""
+        return json.dumps(fake_pa11y_data).encode('utf8'), b""
     pa11y_process.communicate.side_effect = mock_communicate
     mocker.patch("subprocess.Popen", return_value=pa11y_process)
 
