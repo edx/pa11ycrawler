@@ -21,17 +21,22 @@ def urls_are_equal(url1, url2):
     )
 
 
-def test_start_with_api():
+def test_start_with_login():
     spider = EdxSpider(email="staff@example.com", password="edx")
     requests = list(spider.start_requests())
+
     assert len(requests) == 1
     request = requests[0]
     assert isinstance(request, scrapy.Request)
-    expected_url = 'http://localhost:8000/api/courses/v1/blocks?course_id=course-v1%3AedX%2BTest101%2Bcourse&depth=all&all_blocks=true'
+    expected_url = 'http://localhost:8000/user_api/v1/account/login_session/'
     assert urls_are_equal(request.url, expected_url)
-    assert request.method == "GET"
-    assert request.headers == {}
-    assert not request.callback
+    expected_body = b'email=staff%40example.com&password=edx'
+    assert request.body == expected_body
+    assert request.method == "POST"
+    assert request.headers == {
+        b'Content-Type': [b'application/x-www-form-urlencoded'],
+    }
+    assert request.callback
 
 
 def test_start_with_auto_auth():
@@ -43,8 +48,9 @@ def test_start_with_auto_auth():
     expected_url = 'http://localhost:8000/auto_auth?course_id=course-v1%3AedX%2BTest101%2Bcourse&staff=true'
     assert urls_are_equal(request.url, expected_url)
     assert request.method == "GET"
-    assert request.headers == {b"Accept": [b"application/json"]}
-    # this is to verify that the JSON response will get handled in a callback
+    assert request.headers == {
+        b"Accept": [b"application/json"]
+    }
     assert request.callback
 
 
@@ -62,7 +68,7 @@ def test_auto_auth_response(mocker):
 
     assert spider.login_email == None
     assert spider.login_password == None
-    requests = list(spider.parse_auto_auth(fake_response))
+    requests = list(spider.after_auto_auth(fake_response))
     assert spider.login_email == "sparky@gooddog.woof"
     assert spider.login_password == "b4rkb4rkwo0f"
 
@@ -110,8 +116,10 @@ def test_log_back_in(mocker):
     assert len(requests) == 2
     request = requests[0]
     item = requests[1]
-    expected_url = 'http://localhost:8000/login?next=/foo/bar&password=xyz&email=abc%40def.com'
+    expected_url = 'http://localhost:8000/user_api/v1/account/login_session/?next=%2Ffoo%2Fbar'
     assert urls_are_equal(request.url, expected_url)
+    expected_body = b'email=abc%40def.com&password=xyz'
+    assert request.body == expected_body
     assert item == {
         'accessed_at': datetime(2016, 1, 1),
         'page_title': 'Sign in or Register',
