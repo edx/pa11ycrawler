@@ -42,7 +42,7 @@
         <td class="${color_classes[result['type']]}">${result['type']}</td>
         <td> ${get_code_info(result['code'])['base_code']} </td>
         <td>
-        % for code, href in get_code_info(result['code'])['doc_links'].iteritems():
+        % for code, href in get_code_info(result['code'])['doc_links'].items():
             <a href="${href}"><span class='sr-only'>Docs for </span>${code}</a>
         % endfor
         </td>

@@ -119,7 +119,7 @@ class Pa11yPipeline(object):
         if not pa11y_output:
             # no output from pa11y, nothing to check.
             return
-        pa11y_results = json.loads(pa11y_output).get("results")
+        pa11y_results = json.loads(pa11y_output.decode('utf8')).get("results")
         if not pa11y_results:
             return
         title_errs = [err for err in pa11y_results
@@ -147,12 +147,14 @@ class Pa11yPipeline(object):
                 )
                 logger.error(msg)
 
-    def write_pa11y_results(self, item, results, data_dir):
+    def write_pa11y_results(self, item, pa11y_output, data_dir):
         """
-        Write the output from pa11y into a data file.
+        Write the output from pa11y into a data file. Note that `pa11y_output`
+        is a bytes object, not a string -- it comes directly from the
+        subprocess module.
         """
         # `pa11y` outputs JSON, so we'll just add a bit more info for context
-        data = json.loads(results)
+        data = json.loads(pa11y_output.decode('utf8'))
         data.update(item)
 
         # it would be nice to use the URL as the filename,

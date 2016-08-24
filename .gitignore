@@ -66,6 +66,7 @@ node_modules/
 
 # output data
 data/
+html/
 
 # other
 .DS_Store

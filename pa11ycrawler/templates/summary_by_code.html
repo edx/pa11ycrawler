@@ -30,7 +30,7 @@ ${summary.make_summary_toolbar(
         </tr>
     </thead>
     <tbody>
-        % for code,result in results.iteritems():
+        % for code,result in results.items():
             ${makerow(code, result, color_classes)}
         % endfor
     </tbody>
@@ -48,7 +48,7 @@ ${summary.make_summary_toolbar(
             % endfor
         </td>
         <td>
-        % for sub_code, href in get_code_info(code)['doc_links'].iteritems():
+        % for sub_code, href in get_code_info(code)['doc_links'].items():
             <a href="${href}"><span class='sr-only'>Docs for </span>${sub_code}</a>
         % endfor
         </td>

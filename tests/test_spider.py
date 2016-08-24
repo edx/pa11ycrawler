@@ -54,7 +54,11 @@ def test_auto_auth_response(mocker):
         "email": "sparky@gooddog.woof",
         "password": "b4rkb4rkwo0f",
     }
-    fake_response = mocker.Mock(body=json.dumps(fake_result))
+    fake_response = TextResponse(
+        url="http://localhost:8000/auto_auth",
+        body=json.dumps(fake_result).encode('utf8'),
+        encoding="utf-8",
+    )
 
     assert spider.login_email == None
     assert spider.login_password == None
@@ -96,7 +100,7 @@ def test_log_back_in(mocker):
     fake_response = TextResponse(
         url="http://localhost:8000/login?next=/foo/bar",
         request=fake_request,
-        body=login_html,
+        body=login_html.encode("utf-8"),
         encoding="utf-8",
     )
     spider = EdxSpider(email="abc@def.com", password="xyz")
