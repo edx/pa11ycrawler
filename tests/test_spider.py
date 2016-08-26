@@ -13,6 +13,29 @@ except ImportError:
     from urlparse import parse_qs
 
 
+CSRF_HEADER = (
+    "csrftoken=2JH7ojWIMGDjWxSrdnp4Jkg0bGxaS3MV; "
+    "expires=Fri, 25-Aug-2017 18:55:05 GMT; "
+    "Max-Age=31449600; Path=/; secure"
+)
+LOGIN_HTML = textwrap.dedent("""
+    <html>
+      <head>
+        <title>Sign in or Register</title>
+      </head>
+      <body>
+        <h1>Sign In</h1>
+        <form id="login">
+          <input name="email">
+          <input name="password">
+          <input type="checkbox" name="remember">
+        </form>
+        <button>Create an account</button>
+      </body>
+    </html>
+""")
+
+
 def urls_are_equal(url1, url2):
     """
     Compare to URLs for equality, ignoring the ordering of non-ordered elements.
@@ -44,9 +67,7 @@ def test_start_with_login_callback():
         url="http://localhost:8000/login",
         body=b"",
         encoding="utf-8",
-        headers={
-            "Set-Cookie": "csrftoken=2JH7ojWIMGDjWxSrdnp4Jkg0bGxaS3MV; expires=Fri, 25-Aug-2017 18:55:05 GMT; Max-Age=31449600; Path=/; secure",
-        }
+        headers={"Set-Cookie": CSRF_HEADER},
     )
     requests = list(spider.after_initial_csrf(fake_response))
 
@@ -113,31 +134,16 @@ def test_auto_auth_response(mocker):
 
 
 @freeze_time("2016-01-01")
-def test_log_back_in(mocker):
-    login_html = textwrap.dedent("""
-    <html>
-      <head>
-        <title>Sign in or Register</title>
-      </head>
-      <body>
-        <h1>Sign In</h1>
-        <form id="login">
-          <input name="email">
-          <input name="password">
-          <input type="checkbox" name="remember">
-        </form>
-        <button>Create an account</button>
-      </body>
-    </html>
-    """)
+def test_log_back_in():
     fake_request = scrapy.Request(
         url="http://localhost:8000/foo/bar"
     )
     fake_response = HtmlResponse(
         url="http://localhost:8000/login?next=/foo/bar",
         request=fake_request,
-        body=login_html.encode("utf-8"),
+        body=LOGIN_HTML.encode("utf-8"),
         encoding="utf-8",
+        headers={"Set-Cookie": CSRF_HEADER},
     )
     spider = EdxSpider(email="abc@def.com", password="xyz")
 
@@ -148,12 +154,17 @@ def test_log_back_in(mocker):
     item = requests[1]
     expected_url = 'http://localhost:8000/user_api/v1/account/login_session/?next=%2Ffoo%2Fbar'
     assert urls_are_equal(request.url, expected_url)
+    assert request.method == "POST"
     body = parse_qs(request.body.decode('utf8'))
     expected_body = {
         "email": ["abc@def.com"],
         "password": ["xyz"],
     }
     assert body == expected_body
+    assert request.headers == {
+        b'Content-Type': [b'application/x-www-form-urlencoded'],
+        b'X-Csrftoken': [b'2JH7ojWIMGDjWxSrdnp4Jkg0bGxaS3MV'],
+    }
     assert item == {
         'accessed_at': datetime(2016, 1, 1),
         'page_title': 'Sign in or Register',
