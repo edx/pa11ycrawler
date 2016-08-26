@@ -144,6 +144,21 @@ class Pa11yPipeline(object):
                 )
                 logger.error(msg)
 
+    def track_pa11y_stats(self, pa11y_results, spider):
+        """
+        Keep track of the number of pa11y errors, warnings, and notices that
+        we've seen so far, using the Scrapy stats collector:
+        http://doc.scrapy.org/en/1.1/topics/stats.html
+        """
+        counts = pa11y_results.get("count", {})
+        if not counts:
+            spider.logger.warning("Missing pa11y counts!")
+            return
+        stats = spider.crawler.stats
+        stats.inc_value("pa11y/error", count=counts["error"], spider=spider)
+        stats.inc_value("pa11y/warning", count=counts["warning"], spider=spider)
+        stats.inc_value("pa11y/notice", count=counts["notice"], spider=spider)
+
     def write_pa11y_results(self, item, pa11y_results, data_dir):
         """
         Write the output from pa11y into a data file.
@@ -222,6 +237,7 @@ class Pa11yPipeline(object):
         else:
             pa11y_results = {}
         self.check_title_match(item['page_title'], pa11y_results, spider.logger)
+        self.track_pa11y_stats(pa11y_results, spider)
         os.remove(config_file.name)
         self.write_pa11y_results(item, pa11y_results, spider.data_dir)
         return item
