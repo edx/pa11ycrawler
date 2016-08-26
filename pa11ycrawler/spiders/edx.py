@@ -42,6 +42,8 @@ class EdxSpider(CrawlSpider):
             port="8000",
             email=None,
             password=None,
+            http_user=None,
+            http_pass=None,
             course_key="course-v1:edX+Test101+course",
             data_dir="data",
         ):  # noqa
@@ -52,6 +54,8 @@ class EdxSpider(CrawlSpider):
         self.domain = domain
         self.port = int(port)
         self.course_key = course_key
+        self.http_user = http_user
+        self.http_pass = http_pass
         self.data_dir = os.path.abspath(os.path.expanduser(data_dir))
 
         # set start URL based on course_key, which is the test course by default
