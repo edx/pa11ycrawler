@@ -47,7 +47,8 @@ If an email and password are not specified, then pa11ycrawler will use the
 Note that this assumes that the "auto auth" feature is enabled -- if not, the
 crawler won't be able to crawl without an email and password set.
 
-The `http_user` and `http_pass` arguments are used for HTTP Basic Auth.
+The `http_user` and `http_pass` arguments are used for HTTP Basic Auth. If
+either of these is unset, pa11ycrawler will not attempt to use HTTP Basic auth.
 
 The `data_dir` option is used to determine where this crawler will save its
 output. pa11ycrawler will run each page of the site through `pa11y`,
