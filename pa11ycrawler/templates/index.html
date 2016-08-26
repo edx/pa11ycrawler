@@ -18,8 +18,8 @@ ${summary.make_summary(
     data-search="true">
     <thead>
         <tr>
-            <th data-field='Page Title' data-sortable="true">Page Title</th>
-            <th data-field='Results Link' data-sortable="true">Results Link</th>
+            <th data-field='Page' data-sortable="true">Page</th>
+            <th data-field='View Live' data-sortable="true">View Live</th>
             <th class='active' data-field='Total' data-sortable="true">Total</th>
             <th class='danger' data-field='Errors' data-sortable="true">Errors</th>
             <th class='warning' data-field='Warnings' data-sortable="true">Warnings</th>
@@ -36,8 +36,10 @@ ${summary.make_summary(
 
 <%def name="makerow(page)">
     <tr>
-        <td><a href="${page['url']}">${page['page_title']}</a></td>
-        <td><a href="${page['filename']}">Results<span class='sr-only'>&nbsp;for ${page['page_title']}</span></a></td>
+        <td><a href="${page['filename']}" target="_blank">${page['page_title']}</a></td>
+        <td><a href="${page['url']}" target="_blank">
+          View <span class='sr-only'>${page['page_title']}&nbsp;</span>Live
+        </a></td>
         <td>${page['count']['total']}</td>
         <td>${page['count']['error']}</td>
         <td>${page['count']['warning']}</td>
