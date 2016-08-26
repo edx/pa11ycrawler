@@ -24,10 +24,14 @@ def get_csrf_token(response):
     cookie_headers = [
         h.decode('ascii') for h in response.headers.getlist("Set-Cookie")
     ]
-    csrf_header = [
+    if not cookie_headers:
+        return None
+    csrf_headers = [
         h for h in cookie_headers if h.startswith("csrftoken=")
-    ][-1]
-    match = re.match("csrftoken=([^ ;]+);", csrf_header)
+    ]
+    if not csrf_headers:
+        return None
+    match = re.match("csrftoken=([^ ;]+);", csrf_headers[-1])
     return match.group(1)
 
 

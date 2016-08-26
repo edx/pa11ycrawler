@@ -2,11 +2,15 @@ import pytest
 import json
 from datetime import datetime
 import scrapy
-from scrapy.http.response.text import TextResponse
+from scrapy.http.response.html import HtmlResponse
 import textwrap
 from freezegun import freeze_time
 from urlobject import URLObject
 from pa11ycrawler.spiders.edx import EdxSpider
+try:
+    from urllib.parse import parse_qs
+except ImportError:
+    from urlparse import parse_qs
 
 
 def urls_are_equal(url1, url2):
@@ -24,17 +28,43 @@ def urls_are_equal(url1, url2):
 def test_start_with_login():
     spider = EdxSpider(email="staff@example.com", password="edx")
     requests = list(spider.start_requests())
+    assert len(requests) == 1
+    request = requests[0]
+    assert isinstance(request, scrapy.Request)
+    expected_url = 'http://localhost:8000/login'
+    assert urls_are_equal(request.url, expected_url)
+    assert request.method == "GET"
+    assert request.headers == {}
+    assert request.callback
+
+
+def test_start_with_login_callback():
+    spider = EdxSpider(email="staff@example.com", password="edx")
+    fake_response = HtmlResponse(
+        url="http://localhost:8000/login",
+        body=b"",
+        encoding="utf-8",
+        headers={
+            "Set-Cookie": "csrftoken=2JH7ojWIMGDjWxSrdnp4Jkg0bGxaS3MV; expires=Fri, 25-Aug-2017 18:55:05 GMT; Max-Age=31449600; Path=/; secure",
+        }
+    )
+    requests = list(spider.after_initial_csrf(fake_response))
 
     assert len(requests) == 1
     request = requests[0]
     assert isinstance(request, scrapy.Request)
     expected_url = 'http://localhost:8000/user_api/v1/account/login_session/'
     assert urls_are_equal(request.url, expected_url)
-    expected_body = b'email=staff%40example.com&password=edx'
-    assert request.body == expected_body
     assert request.method == "POST"
+    body = parse_qs(request.body.decode('utf8'))
+    expected_body = {
+        "email": ["staff@example.com"],
+        "password": ["edx"],
+    }
+    assert body == expected_body
     assert request.headers == {
         b'Content-Type': [b'application/x-www-form-urlencoded'],
+        b'X-Csrftoken': [b'2JH7ojWIMGDjWxSrdnp4Jkg0bGxaS3MV'],
     }
     assert request.callback
 
@@ -60,7 +90,7 @@ def test_auto_auth_response(mocker):
         "email": "sparky@gooddog.woof",
         "password": "b4rkb4rkwo0f",
     }
-    fake_response = TextResponse(
+    fake_response = HtmlResponse(
         url="http://localhost:8000/auto_auth",
         body=json.dumps(fake_result).encode('utf8'),
         encoding="utf-8",
@@ -75,7 +105,7 @@ def test_auto_auth_response(mocker):
     assert len(requests) == 1
     request = requests[0]
     assert isinstance(request, scrapy.Request)
-    expected_url = 'http://localhost:8000/api/courses/v1/blocks?course_id=course-v1%3AedX%2BTest101%2Bcourse&depth=all&all_blocks=true'
+    expected_url = 'http://localhost:8000/api/courses/v1/blocks/?course_id=course-v1%3AedX%2BTest101%2Bcourse&depth=all&all_blocks=true'
     assert urls_are_equal(request.url, expected_url)
     assert request.method == "GET"
     assert request.headers == {}
@@ -103,7 +133,7 @@ def test_log_back_in(mocker):
     fake_request = scrapy.Request(
         url="http://localhost:8000/foo/bar"
     )
-    fake_response = TextResponse(
+    fake_response = HtmlResponse(
         url="http://localhost:8000/login?next=/foo/bar",
         request=fake_request,
         body=login_html.encode("utf-8"),
@@ -118,8 +148,12 @@ def test_log_back_in(mocker):
     item = requests[1]
     expected_url = 'http://localhost:8000/user_api/v1/account/login_session/?next=%2Ffoo%2Fbar'
     assert urls_are_equal(request.url, expected_url)
-    expected_body = b'email=abc%40def.com&password=xyz'
-    assert request.body == expected_body
+    body = parse_qs(request.body.decode('utf8'))
+    expected_body = {
+        "email": ["abc@def.com"],
+        "password": ["xyz"],
+    }
+    assert body == expected_body
     assert item == {
         'accessed_at': datetime(2016, 1, 1),
         'page_title': 'Sign in or Register',
