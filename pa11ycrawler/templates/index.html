@@ -37,7 +37,9 @@ ${summary.make_summary(
 <%def name="makerow(page)">
     <tr>
         <td><a href="${page['filename']}">${page['page_title']}</a></td>
-        <td><a href="${page['url']}">View Live</a></td>
+        <td><a href="${page['url']}">
+          View <span class='sr-only'>${page['page_title']}&nbsp;</span>Live
+        </a></td>
         <td>${page['count']['total']}</td>
         <td>${page['count']['error']}</td>
         <td>${page['count']['warning']}</td>
