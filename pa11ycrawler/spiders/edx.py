@@ -140,8 +140,10 @@ class EdxSpider(CrawlSpider):
         """
         This method is called *only* if the crawler is started with an
         email and password combination.
-        It verifies that the login request was successful,
-        and then generates requests from `self.start_urls`.
+        In order to log in, we need a CSRF token from a GET request. This
+        method takes the result of a GET request, extracts the CSRF token,
+        and uses it to make a login request. The response to this login
+        request will be handled by the `after_initial_login` method.
         """
         login_url = (
             URLObject("http://")
