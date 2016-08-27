@@ -109,20 +109,17 @@ class Pa11yPipeline(object):
         config_file.close()
         return config_file
 
-    def check_title_match(self, expected_title, pa11y_output, logger):
+    def check_title_match(self, expected_title, pa11y_results, logger):
         """
         Check if Scrapy reports any issue with the HTML <title> element.
         If so, compare that <title> element to the title that we got in the
         A11yItem. If they don't match, something is screwy, and pa11y isn't
         parsing the page that we expect.
         """
-        if not pa11y_output:
+        if not pa11y_results:
             # no output from pa11y, nothing to check.
             return
-        pa11y_results = json.loads(pa11y_output.decode('utf8')).get("results")
-        if not pa11y_results:
-            return
-        title_errs = [err for err in pa11y_results
+        title_errs = [err for err in pa11y_results.get("results", [])
                       if err["html"].startswith("<title")]
         for err in title_errs:
             title_elmt = html.fragment_fromstring(err["html"])
@@ -147,15 +144,27 @@ class Pa11yPipeline(object):
                 )
                 logger.error(msg)
 
-    def write_pa11y_results(self, item, pa11y_output, data_dir):
+    def track_pa11y_stats(self, pa11y_results, spider):
         """
-        Write the output from pa11y into a data file. Note that `pa11y_output`
-        is a bytes object, not a string -- it comes directly from the
-        subprocess module.
+        Keep track of the number of pa11y errors, warnings, and notices that
+        we've seen so far, using the Scrapy stats collector:
+        http://doc.scrapy.org/en/1.1/topics/stats.html
+        """
+        counts = pa11y_results.get("count", {})
+        if not counts:
+            spider.logger.warning("Missing pa11y counts!")
+            return
+        stats = spider.crawler.stats
+        stats.inc_value("pa11y/error", count=counts["error"], spider=spider)
+        stats.inc_value("pa11y/warning", count=counts["warning"], spider=spider)
+        stats.inc_value("pa11y/notice", count=counts["notice"], spider=spider)
+
+    def write_pa11y_results(self, item, pa11y_results, data_dir):
+        """
+        Write the output from pa11y into a data file.
         """
         # `pa11y` outputs JSON, so we'll just add a bit more info for context
-        data = json.loads(pa11y_output.decode('utf8'))
-        data.update(item)
+        pa11y_results.update(item)
 
         # it would be nice to use the URL as the filename,
         # but that gets complicated (long URLs, special characters, etc)
@@ -173,7 +182,7 @@ class Pa11yPipeline(object):
             os.makedirs(data_dir)
 
         with open(filepath, 'w') as f:
-            json.dump(data, f, cls=DateTimeEncoder)
+            json.dump(pa11y_results, f, cls=DateTimeEncoder)
 
     def process_item(self, item, spider):
         """
@@ -223,7 +232,12 @@ class Pa11yPipeline(object):
                 )
             )
 
-        self.check_title_match(item['page_title'], stdout, spider.logger)
+        if stdout:
+            pa11y_results = json.loads(stdout.decode('utf8'))
+        else:
+            pa11y_results = {}
+        self.check_title_match(item['page_title'], pa11y_results, spider.logger)
+        self.track_pa11y_stats(pa11y_results, spider)
         os.remove(config_file.name)
-        self.write_pa11y_results(item, stdout, spider.data_dir)
+        self.write_pa11y_results(item, pa11y_results, spider.data_dir)
         return item

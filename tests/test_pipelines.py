@@ -212,3 +212,50 @@ def test_pa11y_title_mismatch(mocker, tmpdir):
         'Pa11y saw elided title "Evil Demons of Despa...".'
     )
     spider.logger.error.assert_called_with(expected_msg)
+
+
+def test_pa11y_stats(mocker, tmpdir):
+    item = {
+        "url": "http://courses.edx.org/stats",
+        "page_title": "Stats Collection for Dummies",
+        "request_headers": {"Cookie": "nocookieforyou"},
+        "accessed_at": datetime(2016, 8, 26, 14, 12, 45),
+    }
+    fake_pa11y_data = {
+        "count": {
+            "error": 2,
+            "warning": 5,
+            "notice": 10,
+            "total": 17,
+        }
+    }
+
+    # setup
+    data_dir = tmpdir.mkdir("data")
+    spider = mocker.Mock(data_dir=str(data_dir))
+
+    # fake subprocess: version
+    mocker.patch("subprocess.check_call")
+
+    # fake subprocess: run pa11y
+    pa11y_process = mocker.Mock(name="run-Popen", returncode=None)
+    def mock_communicate():
+        pa11y_process.returncode = 2
+        # returns both stdout and stderr
+        return json.dumps(fake_pa11y_data).encode('utf8'), b""
+    pa11y_process.communicate.side_effect = mock_communicate
+    mocker.patch("subprocess.Popen", return_value=pa11y_process)
+
+    # stub out config file creation/removal
+    mocker.patch("tempfile.NamedTemporaryFile")
+    mocker.patch("os.remove")
+
+    # test
+    pa11y_pl = Pa11yPipeline()
+    pa11y_pl.process_item(item, spider)
+
+    # check
+    inc_value = spider.crawler.stats.inc_value
+    inc_value.assert_any_call("pa11y/error", count=2, spider=spider)
+    inc_value.assert_any_call("pa11y/warning", count=5, spider=spider)
+    inc_value.assert_any_call("pa11y/notice", count=10, spider=spider)
