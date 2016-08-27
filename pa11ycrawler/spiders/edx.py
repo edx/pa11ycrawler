@@ -15,6 +15,7 @@ LOGIN_HTML_PATH = "/login"
 LOGIN_API_PATH = "/user_api/v1/account/login_session/"
 AUTO_AUTH_PATH = "/auto_auth"
 COURSE_BLOCKS_API_PATH = "/api/courses/v1/blocks/"
+LOGIN_FAILURE_MSG = "We couldn't sign you in."
 
 
 def get_csrf_token(response):
@@ -285,7 +286,7 @@ class EdxSpider(CrawlSpider):
         it searches for links in the response instead of generating
         requests from `self.start_urls`.
         """
-        if "We couldn't sign you in." in response.text:
+        if LOGIN_FAILURE_MSG in response.text:
             self.logger.error("Credentials failed!")
             return
 
