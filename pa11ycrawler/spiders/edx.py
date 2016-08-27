@@ -2,6 +2,7 @@
 A spider that can crawl an Open edX instance.
 """
 import os
+import re
 import json
 from datetime import datetime
 from urlobject import URLObject
@@ -10,8 +11,29 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from pa11ycrawler.items import A11yItem
 
+LOGIN_HTML_PATH = "/login"
+LOGIN_API_PATH = "/user_api/v1/account/login_session/"
 AUTO_AUTH_PATH = "/auto_auth"
-COURSE_BLOCKS_API_PATH = "/api/courses/v1/blocks"
+COURSE_BLOCKS_API_PATH = "/api/courses/v1/blocks/"
+LOGIN_FAILURE_MSG = "We couldn't sign you in."
+
+
+def get_csrf_token(response):
+    """
+    Extract the CSRF token out of the "Set-Cookie" header of a response.
+    """
+    cookie_headers = [
+        h.decode('ascii') for h in response.headers.getlist("Set-Cookie")
+    ]
+    if not cookie_headers:
+        return None
+    csrf_headers = [
+        h for h in cookie_headers if h.startswith("csrftoken=")
+    ]
+    if not csrf_headers:
+        return None
+    match = re.match("csrftoken=([^ ;]+);", csrf_headers[-1])
+    return match.group(1)
 
 
 class EdxSpider(CrawlSpider):
@@ -76,14 +98,25 @@ class EdxSpider(CrawlSpider):
     def start_requests(self):
         """
         Gets the spider started.
-        If both `self.login_email` and `self.login_password` are set, this
-        method generates requests from `self.start_urls`. If not, this method
-        gets credentials using the "auto auth" feature, and *then* generates
-        requests from `self.start_urls`.
+        If both `self.login_email` and `self.login_password` are set,
+        this method generates a request to login with those credentials.
+        Otherwise, this method generates a request to go to the "auto auth"
+        page and get credentials from there. Either way, this method
+        doesn't actually generate requests from `self.start_urls` -- that is
+        handled by the `after_initial_login()` and `after_auto_auth()`
+        methods.
         """
         if self.login_email and self.login_password:
-            for url in self.start_urls:
-                yield self.make_requests_from_url(url)
+            login_url = (
+                URLObject("http://")
+                .with_hostname(self.domain)
+                .with_port(self.port)
+                .with_path(LOGIN_HTML_PATH)
+            )
+            yield scrapy.Request(
+                login_url,
+                callback=self.after_initial_csrf,
+            )
         else:
             self.logger.info(
                 "email/password unset, fetching credentials via auto_auth"
@@ -99,17 +132,65 @@ class EdxSpider(CrawlSpider):
                 )
             )
             # make sure to request a parseable JSON response
+            headers = {
+                b"Accept": b"application/json",
+            }
             yield scrapy.Request(
                 auth_url,
-                headers={b"Accept": b"application/json"},
-                callback=self.parse_auto_auth,
+                headers=headers,
+                callback=self.after_auto_auth,
             )
 
-    def parse_auto_auth(self, response):
+    def after_initial_csrf(self, response):
         """
-        Parse the response from the "auto auth" feature.
-        Once we have an email and password, move on to the
-        `self.start_urls` list.
+        This method is called *only* if the crawler is started with an
+        email and password combination.
+        In order to log in, we need a CSRF token from a GET request. This
+        method takes the result of a GET request, extracts the CSRF token,
+        and uses it to make a login request. The response to this login
+        request will be handled by the `after_initial_login` method.
+        """
+        login_url = (
+            URLObject("http://")
+            .with_hostname(self.domain)
+            .with_port(self.port)
+            .with_path(LOGIN_API_PATH)
+        )
+        credentials = {
+            "email": self.login_email,
+            "password": self.login_password,
+        }
+        headers = {
+            b"X-CSRFToken": get_csrf_token(response),
+        }
+        yield scrapy.FormRequest(
+            login_url,
+            formdata=credentials,
+            headers=headers,
+            callback=self.after_initial_login,
+        )
+
+    def after_initial_login(self, response):
+        """
+        This method is called *only* if the crawler is started with an
+        email and password combination.
+        It verifies that the login request was successful,
+        and then generates requests from `self.start_urls`.
+        """
+        if "We couldn't sign you in." in response.text:
+            self.logger.error("Credentials failed!")
+            return
+
+        self.logger.info("successfully completed initial login")
+        for url in self.start_urls:
+            yield self.make_requests_from_url(url)
+
+    def after_auto_auth(self, response):
+        """
+        This method is called *only* if the crawler is started without an
+        email and password combination. It parses the response from the
+        "auto auth" feature, and saves the email and password combination.
+        Then it generates requests from `self.start_urls`.
         """
         result = json.loads(response.text)
         self.login_email = result["email"]
@@ -134,8 +215,10 @@ class EdxSpider(CrawlSpider):
         @scrapes url request_headers accessed_at page_title
         """
         # if we got redirected to a login page, then login
-        if URLObject(response.url).path in ("/login", "/register"):
-            yield self.make_login_request(response)
+        if URLObject(response.url).path == LOGIN_HTML_PATH:
+            requests = self.handle_unexpected_redirect_to_login_page(response)
+            for request in requests:
+                yield request
 
         title = response.xpath("//title/text()").extract_first().strip()
         # `response.request.headers` is a dictionary where the key is the
@@ -159,26 +242,58 @@ class EdxSpider(CrawlSpider):
         )
         yield item
 
-    def make_login_request(self, response):
+    def handle_unexpected_redirect_to_login_page(self, response):
         """
-        If the page wants me to log in, then I'll log in!
+        This method is called if the crawler has been unexpectedly logged out.
+        If that happens, and the crawler requests a page that requires a
+        logged-in user, the crawler will be redirected to a login page,
+        with the originally-requested URL as the `next` query parameter.
+
+        This method simply causes the crawler to log back in using the saved
+        email and password credentials. We rely on the fact that the login
+        page will redirect the user to the URL in the `next` query parameter
+        if the login is successful -- this will allow the crawl to resume
+        where it left off.
+
+        This is method is very much like the `get_initial_login()` method,
+        but the callback is `self.after_login` instead of
+        `self.after_initial_login`.
         """
+        next_url = URLObject(response.url).query_dict.get("next")
+        login_url = (
+            URLObject("http://")
+            .with_hostname(self.domain)
+            .with_port(self.port)
+            .with_path(LOGIN_API_PATH)
+        )
+        if next_url:
+            login_url = login_url.set_query_param("next", next_url)
+
         credentials = {
             "email": self.login_email,
             "password": self.login_password,
         }
-        return scrapy.FormRequest.from_response(
-            response,
-            formdata=credentials
+        headers = {
+            b"X-CSRFToken": get_csrf_token(response),
+        }
+        yield scrapy.FormRequest(
+            login_url,
+            formdata=credentials,
+            headers=headers,
+            callback=self.after_login,
         )
 
     def after_login(self, response):
         """
         Check for a login error, then proceed as normal.
+        This is very much like the `after_initial_login()` method, but
+        it searches for links in the response instead of generating
+        requests from `self.start_urls`.
         """
-        if "We couldn't sign you in." in response.body:
+        if LOGIN_FAILURE_MSG in response.text:
             self.logger.error("Credentials failed!")
             return
 
+        # delegate to the `parse_item()` method, which handles normal responses.
         for item in self.parse_item(response):
             yield item
