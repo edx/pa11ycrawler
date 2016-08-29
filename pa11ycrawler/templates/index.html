@@ -1,48 +1,62 @@
-<%inherit file="base.html" />
-<%namespace name="summary" file="summary.html"/>
+{% extends 'base.html' %}
+{% block content %}
 <div class="col-sm-10 col-sm-offset-1">
-<h1>Accessibility Audit Index</h1> <br />
+  <h1>Accessibility Audit Index</h1>
 </div>
-${summary.make_summary(
-    counter['error'],
-    counter['warning'],
-    counter['notice'],
-    counter['total']
-)}
+<div class="col-sm-10 col-sm-offset-1">
+  <h2>Summary</h2>
+</div>
+<div class="col-sm-3 col-sm-offset-1">
+  <ul class="list-group">
+      <li class="list-group-item">
+          Errors
+          <span class="list-group-item-danger badge">{{ num_error }}</span>
+      </li>
+      <li class="list-group-item">
+          Warnings
+          <span class="list-group-item-warning badge">{{ num_warning }}</span>
+      </li>
+      <li class="list-group-item">
+          Notices
+          <span class="list-group-item-info badge">{{ num_notice }}</span>
+      </li>
+      <li class="list-group-item">
+          Total Issues
+          <span class="badge">{{ num_error + num_warning + num_notice }}</span>
+      </li>
+  </ul>
+</div>
 
 <br />
 <div class="col-sm-10 col-sm-offset-1" style="margin-bottom: 30px;">
 <h2 class="hd-4">Pages Checked</h2>
 <table data-classes='table table-no-bordered'
-    data-toggle="table"
-    data-search="true">
-    <thead>
-        <tr>
-            <th data-field='Page' data-sortable="true">Page</th>
-            <th data-field='View Live' data-sortable="true">View Live</th>
-            <th class='active' data-field='Total' data-sortable="true">Total</th>
-            <th class='danger' data-field='Errors' data-sortable="true">Errors</th>
-            <th class='warning' data-field='Warnings' data-sortable="true">Warnings</th>
-            <th class='info' data-field='Notices' data-sortable="true">Notices</th>
-        </tr>
-    </thead>
-    <tbody>
-        % for page in pages:
-            ${makerow(page)}
-        % endfor
-    </tbody>
+       data-toggle="table"
+       data-search="true">
+  <thead>
+    <tr>
+      <th data-field='Page' data-sortable="true">Page</th>
+      <th data-field='View Live' data-sortable="true">View Live</th>
+      <th class='danger' data-field='Errors' data-sortable="true" data-width="10%" data-align="right">Errors</th>
+      <th class='warning' data-field='Warnings' data-sortable="true" data-width="10%" data-align="right">Warnings</th>
+      <th class='info' data-field='Notices' data-sortable="true" data-width="10%" data-align="right">Notices</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for page in pages %}
+      <tr>
+        <td><a href="{{ page.filename }}" target="_blank">
+          {{ page.page_title }}
+        </a></td>
+        <td><a href="{{ page.url }}" target="_blank">
+          View <span class='sr-only'>{{ page.page_title }}&nbsp;</span>Live
+        </a></td>
+        <td>{{ page.num_error }}</td>
+        <td>{{ page.num_warning }}</td>
+        <td>{{ page.num_notice }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
 </table>
 </div>
-
-<%def name="makerow(page)">
-    <tr>
-        <td><a href="${page['filename']}" target="_blank">${page['page_title']}</a></td>
-        <td><a href="${page['url']}" target="_blank">
-          View <span class='sr-only'>${page['page_title']}&nbsp;</span>Live
-        </a></td>
-        <td>${page['count']['total']}</td>
-        <td>${page['count']['error']}</td>
-        <td>${page['count']['warning']}</td>
-        <td>${page['count']['notice']}</td>
-    </tr>
-</%def>
+{% endblock content %}

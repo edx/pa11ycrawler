@@ -2,18 +2,24 @@
 This script transforms JSON from the pa11ycrawler into a beautiful HTML
 report.
 """
-import os
-import os.path
-import io
 import re
 import argparse
-import shutil
 import json
 import logging
 import collections
-from mako.lookup import TemplateLookup
+from path import Path
+from jinja2 import Environment, PackageLoader
+from pa11ycrawler.util import pa11y_counts
 
 log = logging.getLogger(__name__)
+
+PARENT_DIR = Path(__file__).abspath().parent
+REPO_DIR = PARENT_DIR.parent
+
+# A WCAG ref consists of one or more uppercase letters followed by one or more
+# digits. The `code` that pa11y provides may have several WCAG refs -- if so,
+# they are separated by commas with no space in between.
+WCAG_REFS_RE = re.compile("[A-Z]+[0-9]+(,[A-Z]+[0-9]+)*")
 
 
 def make_parser():
@@ -38,59 +44,61 @@ def main():
     """
     parser = make_parser()
     args = parser.parse_args()
-    data_dir = os.path.expanduser(args.data_dir)
-    if not os.path.exists(data_dir):
+    data_dir = Path(args.data_dir).expand()
+    if not data_dir.isdir():
         msg = "Data directory {dir} does not exist".format(dir=args.data_dir)
         raise ValueError(msg)
-    data_filenames = [name for name in os.listdir(data_dir)
+    data_filenames = [name for name in data_dir.files()
                       if name.endswith(".json")]
     if not data_filenames:
         msg = "Data directory {dir} contains no JSON files".format(dir=args.data_dir)
         raise ValueError(msg)
-    output_dir = os.path.expanduser(args.output_dir)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    output_dir = Path(args.output_dir).expand()
+    output_dir.makedirs_p()
 
     return render_html(data_dir, output_dir)
 
 
-COLOR_CLASSES = {
-    'error': 'danger',
-    'warning': 'warning',
-    'notice': 'info',
-}
-
-
-def get_code_info(code):
+def wcag_refs(code):
     """
-    Method for getting links to docs to present in reports.
-
-    Args: code (example: WCAG2AA.Principle3.Guideline3_2.3_2_1.G107)
-    Returns: a dict mapping technique to documentation url.
+    Given a `code` from pa11y, return a list of the WCAG references.
+    These references are always of the form: one or more capital letters,
+    followed by one or more digits. One `code` may contain multiple
+    references, separated by commas.
     """
-    link_info = {'doc_links': {}, 'base_code': ''}
-    base_url = 'https://www.w3.org/TR/WCAG20-TECHS/'
+    bits = code.split(".")
+    for bit in reversed(bits):
+        if WCAG_REFS_RE.match(bit):
+            return bit.split(",")
+    return []
 
-    guide_pattern = re.compile(r'WCAG2AA.Principle\d.Guideline[0-9\_\.]*')
-    base_code_matches = guide_pattern.match(code)
 
-    if not base_code_matches:
-        log.debug(
-            'Code {code} doesn\'t match expected pattern. Unable to produce '
-            'documentation links for reports.'.format(code=code)
+def copy_assets(output_dir):
+    """
+    Copy static assets (CSS, JS, fonts, etc) into the output directory.
+    """
+    node_modules = REPO_DIR / "node_modules"
+    if not node_modules.isdir():
+        msg = (
+            "Node modules have not been installed, cannot copy assets. "
+            "To install them, run `npm install`."
         )
-        return link_info
+        raise RuntimeError(msg)
 
-    link_info['base_code'] = base_code_matches.group()[0:-1]
-    split_code = guide_pattern.split(code)
-    tech_group = split_code[1]
-    tech_pattern = re.compile(r'[A-Z]+\d{1,3}')
-    techs = tech_pattern.findall(tech_group)
+    assets_dir = output_dir / 'assets'
 
-    for tech in techs:
-        link_info['doc_links'][tech] = base_url + tech
-
-    return link_info
+    # bootstrap has a well-organized `dist` directory
+    (node_modules / 'bootstrap' / 'dist').merge_tree(assets_dir)
+    # bootstrap-table has a `dist` directory that mixes JS and CSS
+    bst_dist = node_modules / 'bootstrap-table' / 'dist'
+    for js_file in bst_dist.files("*.js"):
+        js_file.copy(assets_dir / 'js')
+    for css_file in bst_dist.files("*.css"):
+        css_file.copy(assets_dir / 'css')
+    # jquery has a `dist` directory that is all JS
+    (node_modules / 'jquery' / 'dist').merge_tree(assets_dir / 'js')
+    # done!
+    return True
 
 
 def render_html(data_dir, output_dir):
@@ -98,57 +106,53 @@ def render_html(data_dir, output_dir):
     The main workhorse of this script. Finds all the JSON data files
     from pa11ycrawler, and transforms them into HTML files via Mako templating.
     """
-    parent_dir = os.path.dirname(os.path.abspath(__file__))
-    templates_dir = os.path.join(parent_dir, 'templates')
-    template_lookup = TemplateLookup(directories=[templates_dir])
+    env = Environment(loader=PackageLoader('pa11ycrawler', 'templates'))
+    env.globals["wcag_refs"] = wcag_refs
     pages = []
     counter = collections.Counter()
 
-    # copy assets
-    output_assets_dir = os.path.join(output_dir, 'assets')
-    if not os.path.exists(output_assets_dir):
-        shutil.copytree(
-            os.path.join(templates_dir, 'assets'),
-            os.path.join(output_dir, 'assets'),
-        )
+    copy_assets(output_dir)
 
-    # render per-page templates
-    template = template_lookup.get_template("result.html")
-    for fname in os.listdir(data_dir):
-        if not fname.endswith(".json"):
-            continue
-
-        data_path = os.path.join(data_dir, fname)
-        data = json.load(io.open(data_path, encoding="utf-8"))
-        context = {
-            'url': data["url"],
-            'info': data,
-            'report': data,
-            'get_code_info': get_code_info,
-            'color_classes': COLOR_CLASSES,
-        }
-        rendered_html = template.render(**context)
+    # render detail templates
+    template = env.get_template("detail.html")
+    for data_file in data_dir.files('*.json'):
+        data = json.load(data_file.open())
+        num_error, num_warning, num_notice = pa11y_counts(data['pa11y'])
+        data["num_error"] = num_error
+        data["num_warning"] = num_warning
+        data["num_notice"] = num_notice
+        rendered_html = template.render(**data)  # pylint: disable=no-member
         # replace `.json` with `.html`
-        fname = fname[:-5] + ".html"
-        html_path = os.path.join(output_dir, fname)
-        with io.open(html_path, "w", encoding="utf-8") as f:
-            f.write(rendered_html)
+        fname = data_file.namebase + ".html"
+        html_path = output_dir / fname
+        html_path.write_text(rendered_html)
 
         data["filename"] = fname
         pages.append(data)
-        for count_key in ("total", "error", "warning", "notice"):
-            counter[count_key] += data["count"][count_key]
+
+        counter["error"] += num_error
+        counter["warning"] += num_warning
+        counter["notice"] += num_notice
+
+    def extract_nums(page):
+        "Used for sorting"
+        return (
+            page["num_error"],
+            page["num_warning"],
+            page["num_notice"],
+        )
 
     # render index template
-    index_template = template_lookup.get_template("index.html")
+    index_template = env.get_template("index.html")
     context = {
-        'pages': pages,
-        'counter': counter,
+        "pages": sorted(pages, key=extract_nums, reverse=True),
+        "num_error": counter["error"],
+        "num_warning": counter["warning"],
+        "num_notice": counter["notice"],
     }
-    rendered_html = index_template.render(**context)
-    html_path = os.path.join(output_dir, "index.html")
-    with io.open(html_path, 'w', encoding="utf-8") as f:
-        f.write(rendered_html)
+    rendered_html = index_template.render(**context)  # pylint: disable=no-member
+    html_path = output_dir / "index.html"
+    html_path.write_text(rendered_html)
 
 
 if __name__ == "__main__":

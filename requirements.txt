@@ -1,4 +1,5 @@
 scrapy==1.1.2
-mako<2.0
+Jinja2<3.0
 urlobject<3.0
 lxml<4.0
+path.py<9.0

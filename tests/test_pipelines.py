@@ -71,14 +71,13 @@ def test_pa11y_happy_path(mocker, tmpdir):
         "request_headers": {"Cookie": "nocookieforyou"},
         "accessed_at": datetime(2016, 8, 20, 14, 12, 45),
     }
-    fake_pa11y_data = {
-        "results": [{
-            "message": "Check that the title element describes the document.",
-            "code": "WCAG2AA.Principle2.Guideline2_4.2_4_2.H25.2",
-            "type": "notice",
-            "html": "<title>\t\nThis is a Fake Pa...</title>"
-        }]
-    }
+    fake_pa11y_data = [{
+        "message": "Check that the title element describes the document.",
+        "code": "WCAG2AA.Principle2.Guideline2_4.2_4_2.H25.2",
+        "type": "notice",
+        "context": "<title>\t\nThis is a Fake Pa...</title>",
+        "selector": "#fake > div",
+    }]
 
     # setup
     data_dir = tmpdir.mkdir("data")
@@ -119,7 +118,7 @@ def test_pa11y_happy_path(mocker, tmpdir):
     # pa11y should be called correctly
     mock_Popen.assert_called_with(
         ["node_modules/.bin/pa11y", "http://courses.edx.org/fakepage",
-         "--config=mockconfig.json", "--reporter=1.0-json"],
+         "--config=mockconfig.json", "--reporter=json"],
         shell=False, stdout=sp.PIPE, stderr=sp.PIPE
     )
 
@@ -132,9 +131,9 @@ def test_pa11y_happy_path(mocker, tmpdir):
     data_file = data_files[0]
     assert data_file.basename == 'c13d12d109449354e331b1b2f062dcb6.json'
     data_from_file = json.load(data_file)
-    fake_pa11y_data.update(item)
-    fake_pa11y_data["accessed_at"] = fake_pa11y_data["accessed_at"].isoformat()
-    assert data_from_file == fake_pa11y_data
+    item["pa11y"] = fake_pa11y_data
+    item["accessed_at"] = item["accessed_at"].isoformat()
+    assert data_from_file == item
 
     # config file should be created and destroyed
     mock_tempfile.seek(0)
@@ -173,14 +172,14 @@ def test_pa11y_title_mismatch(mocker, tmpdir):
         "request_headers": {"Cookie": "nocookieforyou"},
         "accessed_at": datetime(2016, 8, 20, 14, 12, 45),
     }
-    fake_pa11y_data = {
-        "results": [{
-            "message": "Check that the title element describes the document.",
-            "code": "WCAG2AA.Principle2.Guideline2_4.2_4_2.H25.2",
-            "type": "notice",
-            "html": "<title>Evil Demons of Despa...</title>"
-        }]
-    }
+    fake_pa11y_data = [{
+        "message": "Check that the title element describes the document.",
+        "code": "WCAG2AA.Principle2.Guideline2_4.2_4_2.H25.2",
+        "type": "notice",
+        "typeCode": 3,
+        "context": "<title>Evil Demons of Despa...</title>",
+        "selector": "#hell > div > div:nth-child(7) > ul:nth-child(2)",
+    }]
 
     # setup
     data_dir = tmpdir.mkdir("data")
@@ -221,14 +220,20 @@ def test_pa11y_stats(mocker, tmpdir):
         "request_headers": {"Cookie": "nocookieforyou"},
         "accessed_at": datetime(2016, 8, 26, 14, 12, 45),
     }
-    fake_pa11y_data = {
-        "count": {
-            "error": 2,
-            "warning": 5,
-            "notice": 10,
-            "total": 17,
-        }
-    }
+    fake_pa11y_data = [
+        {"type": "error", "context":""},
+        {"type": "error", "context":""},
+        {"type": "warning", "context":""},
+        {"type": "notice", "context":""},
+        {"type": "error", "context":""},
+        {"type": "notice", "context":""},
+        {"type": "warning", "context":""},
+        {"type": "warning", "context":""},
+        {"type": "notice", "context":""},
+        {"type": "notice", "context":""},
+        {"type": "warning", "context":""},
+        {"type": "notice", "context":""},
+    ]
 
     # setup
     data_dir = tmpdir.mkdir("data")
@@ -256,6 +261,6 @@ def test_pa11y_stats(mocker, tmpdir):
 
     # check
     inc_value = spider.crawler.stats.inc_value
-    inc_value.assert_any_call("pa11y/error", count=2, spider=spider)
-    inc_value.assert_any_call("pa11y/warning", count=5, spider=spider)
-    inc_value.assert_any_call("pa11y/notice", count=10, spider=spider)
+    inc_value.assert_any_call("pa11y/error", count=3, spider=spider)
+    inc_value.assert_any_call("pa11y/warning", count=4, spider=spider)
+    inc_value.assert_any_call("pa11y/notice", count=5, spider=spider)
