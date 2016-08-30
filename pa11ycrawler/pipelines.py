@@ -230,7 +230,7 @@ class Pa11yPipeline(object):
         if stdout:
             pa11y_results = json.loads(stdout.decode('utf8'))
         else:
-            pa11y_results = {}
+            pa11y_results = []
         self.check_title_match(item['page_title'], pa11y_results, spider.logger)
         self.track_pa11y_stats(pa11y_results, spider)
         os.remove(config_file.name)
