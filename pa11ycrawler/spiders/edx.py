@@ -220,7 +220,10 @@ class EdxSpider(CrawlSpider):
             for request in requests:
                 yield request
 
-        title = response.xpath("//title/text()").extract_first().strip()
+        title = response.xpath("//title/text()").extract_first()
+        if title:
+            title = title.strip()
+
         # `response.request.headers` is a dictionary where the key is the
         # header name, and the value is a *list*, containing one item,
         # which is the header value. We need to get rid of this list, and just
