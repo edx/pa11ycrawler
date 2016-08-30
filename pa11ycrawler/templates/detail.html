@@ -33,7 +33,7 @@
     </button>
   </div>
 
-<table data-classes='table table-no-bordered'
+<table data-classes="table table-no-bordered"
        data-toggle="table"
        data-search="true">
   <thead>
@@ -57,7 +57,11 @@
         {% endfor %}
         </td>
         <td>{{ result.message }}</td>
-        <td>{{ result.context | escape}}</td>
+        <td class="html">
+          {{ result.context | escape }}
+          <hr/>
+          {{ result.selector | escape }}
+        </td>
       </tr>
     {% endfor %}
   </tbody>
