@@ -175,10 +175,7 @@ class Pa11yPipeline(object):
         basename = hasher.hexdigest()
         filename = basename + ".json"
         filepath = data_dir / filename
-
-        if not data_dir.isdir():
-            data_dir.makedirs()
-
+        data_dir.makedirs_p()
         text = json.dumps(data, cls=DateTimeEncoder)
         filepath.write_text(text)
 

@@ -17,8 +17,10 @@ PARENT_DIR = Path(__file__).abspath().parent
 REPO_DIR = PARENT_DIR.parent
 
 # A WCAG ref consists of one or more uppercase letters followed by one or more
-# digits. The `code` that pa11y provides may have several WCAG refs -- if so,
-# they are separated by commas with no space in between.
+# digits. For example, "F77", "G73", "ARIA1".
+# The `code` that pa11y provides may have several WCAG refs -- if so, they are
+# separated by commas with no space in between.
+# For example, "H77,H78,H79,H80,H81"
 WCAG_REFS_RE = re.compile("[A-Z]+[0-9]+(,[A-Z]+[0-9]+)*")
 
 
@@ -80,7 +82,7 @@ def copy_assets(output_dir):
     node_modules = REPO_DIR / "node_modules"
     if not node_modules.isdir():
         msg = (
-            "Node modules have not been installed, cannot copy assets. "
+            "Node modules have not been installed; cannot copy assets. "
             "To install them, run `npm install`."
         )
         raise RuntimeError(msg)
@@ -104,7 +106,7 @@ def copy_assets(output_dir):
 def render_html(data_dir, output_dir):
     """
     The main workhorse of this script. Finds all the JSON data files
-    from pa11ycrawler, and transforms them into HTML files via Mako templating.
+    from pa11ycrawler, and transforms them into HTML files via Jinja2 templating.
     """
     env = Environment(loader=PackageLoader('pa11ycrawler', 'templates'))
     env.globals["wcag_refs"] = wcag_refs
