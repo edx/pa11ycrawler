@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="col-sm-2 col-sm-offset-10" style="padding-top: 10px;">
+  <a href="index.html">Back to Index</a>
+</div>
+
+<div class="col-sm-10 col-sm-offset-1" style="margin-bottom: 30px;">
+  <h1>Accessibility Audit for {{ page_title }}</h1>
+  <p><a href="{{ url }}">View page used to generate this report</a></p>
+</div>
+
+<div class="col-sm-10 col-sm-offset-1" style="margin-bottom: 30px;">
+  <div id='summary-toolbar' class="btn-group bars">
+    <button role="button" class="filterby-btn btn btn-secondary-outline" data-filterby='error' aria-pressed="false">
+      Errors
+      <span class="list-group-item-danger badge">{{ num_error }}</span>
+      <span class="sr-only">Click to show errors.</span>
+    </button>
+    <button role="button" class="filterby-btn btn btn-secondary-outline" data-filterby='warning' aria-pressed="false">
+      Warnings
+      <span class="list-group-item-warning badge">{{ num_warning }}</span>
+      <span class="sr-only">Click to show warnings.</span>
+    </button>
+    <button role="button" class="filterby-btn btn btn-secondary-outline" data-filterby='notice' aria-pressed="false">
+      Notices
+      <span class="list-group-item-info badge">{{ num_notice }}</span>
+      <span class="sr-only">Click to show notices.</span>
+    </button>
+    <button role="button" class="filterby-btn btn btn-secondary-outline current" aria-pressed="true">
+      Total Issues
+      <span class="badge">{{ num_error + num_warning + num_notice }}</span>
+      <span class="sr-only">Click to show all issues.</span>
+    </button>
+  </div>
+
+<table data-classes='table table-no-bordered'
+       data-toggle="table"
+       data-search="true">
+  <thead>
+    <tr>
+      <th data-field='type' data-sortable="true" data-width="10%">Type</th>
+      <th data-field='WCAG' data-sortable="true" data-width="10%">WCAG</th>
+      <th data-field='message' data-sortable="true">Message</th>
+      <th data-field='HTML' data-sortable="true">HTML</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% set color_class = {'error': 'danger', 'warning': 'warning', 'notice': 'info'} %}
+    {% for result in pa11y %}
+      <tr>
+        <td class="{{ color_class[result.type] }}">{{ result.type }}</td>
+        <td>
+        {% for ref in wcag_refs(result.code) %}
+          <a href="https://www.w3.org/TR/WCAG20-TECHS/{{ ref }}.html">
+            <span class='sr-only'>Docs for </span>{{ ref }}
+          </a>
+        {% endfor %}
+        </td>
+        <td>{{ result.message }}</td>
+        <td>{{ result.context | escape}}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock content %}

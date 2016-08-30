@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
     <head>
         <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
@@ -33,9 +34,12 @@
                 $("#summary-toolbar").prependTo(".fixed-table-toolbar");
 
                 $('.filterby-btn').click(function(){
-                    $('.table').bootstrapTable('filterBy',
-                        { Type: this.getAttribute('data-filterby').split(',') }
-                    );
+                    var filterBy = this.getAttribute('data-filterby');
+                    var options = {}
+                    if(filterBy) {
+                        options.type = filterBy;
+                    }
+                    $('.table').bootstrapTable('filterBy', options);
                     $('.filterby-btn.current').removeClass('current').attr('aria-pressed', 'false');
                     $(this).addClass('current').attr('aria-pressed', 'true');
                 })
@@ -43,6 +47,6 @@
         </script>
     </head>
     <body>
-        ${next.body()}
+        {% block content %}{% endblock %}
     </body>
 </html>
