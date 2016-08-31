@@ -67,7 +67,7 @@ class Pa11yPipeline(object):
     """
     pa11y_path = "node_modules/.bin/pa11y"
     cli_flags = {
-        "reporter": "json",
+        "reporter": "json-oldnode",
     }
 
     def __init__(self):
