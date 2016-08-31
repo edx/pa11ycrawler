@@ -79,28 +79,7 @@ def copy_assets(output_dir):
     """
     Copy static assets (CSS, JS, fonts, etc) into the output directory.
     """
-    node_modules = REPO_DIR / "node_modules"
-    if not node_modules.isdir():
-        msg = (
-            "Node modules have not been installed; cannot copy assets. "
-            "To install them, run `npm install`."
-        )
-        raise RuntimeError(msg)
-
-    assets_dir = output_dir / 'assets'
-
-    # bootstrap has a well-organized `dist` directory
-    (node_modules / 'bootstrap' / 'dist').merge_tree(assets_dir)
-    # bootstrap-table has a `dist` directory that mixes JS and CSS
-    bst_dist = node_modules / 'bootstrap-table' / 'dist'
-    for js_file in bst_dist.files("*.js"):
-        js_file.copy(assets_dir / 'js')
-    for css_file in bst_dist.files("*.css"):
-        css_file.copy(assets_dir / 'css')
-    # jquery has a `dist` directory that is all JS
-    (node_modules / 'jquery' / 'dist').merge_tree(assets_dir / 'js')
-    # done!
-    return True
+    (PARENT_DIR / "templates" / "assets").merge_tree(output_dir / "assets")
 
 
 def render_html(data_dir, output_dir):

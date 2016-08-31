@@ -4,9 +4,6 @@
   "private": true,
   "dependencies": {
     "pa11y": "4.0.1",
-    "pa11y-reporter-json-oldnode": "1.0.0",
-    "bootstrap": "3.3.7",
-    "bootstrap-table": "1.11.0",
-    "jquery": "3.1.0"
+    "pa11y-reporter-json-oldnode": "1.0.0"
   }
 }
