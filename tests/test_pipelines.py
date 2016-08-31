@@ -118,7 +118,7 @@ def test_pa11y_happy_path(mocker, tmpdir):
     # pa11y should be called correctly
     mock_Popen.assert_called_with(
         ["node_modules/.bin/pa11y", "http://courses.edx.org/fakepage",
-         "--config=mockconfig.json", "--reporter=json"],
+         "--config=mockconfig.json", "--reporter=json-oldnode"],
         shell=False, stdout=sp.PIPE, stderr=sp.PIPE
     )
 
