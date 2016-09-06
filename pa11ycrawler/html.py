@@ -106,7 +106,7 @@ def render_html(data_dir, output_dir):
         # replace `.json` with `.html`
         fname = data_file.namebase + ".html"
         html_path = output_dir / fname
-        html_path.write_text(rendered_html)
+        html_path.write_text(rendered_html, encoding='utf-8')
 
         data["filename"] = fname
         pages.append(data)
