@@ -4,7 +4,8 @@ from datetime import datetime
 import subprocess as sp
 from scrapy.exceptions import DropItem, NotConfigured
 from pa11ycrawler.pipelines import (
-    DuplicatesPipeline, DropDRFPipeline, Pa11yPipeline, DEVNULL
+    DuplicatesPipeline, DropDRFPipeline, Pa11yPipeline, DEVNULL,
+    load_pa11y_results
 )
 try:
     from StringIO import StringIO
@@ -81,7 +82,7 @@ def test_pa11y_happy_path(mocker, tmpdir):
 
     # setup
     data_dir = tmpdir.mkdir("data")
-    spider = mocker.Mock(data_dir=str(data_dir))
+    spider = mocker.Mock(data_dir=str(data_dir), pa11y_ignore_rules=None)
 
     # fake subprocess: version
     mocker.patch("subprocess.check_call")
@@ -183,7 +184,7 @@ def test_pa11y_title_mismatch(mocker, tmpdir):
 
     # setup
     data_dir = tmpdir.mkdir("data")
-    spider = mocker.Mock(data_dir=str(data_dir))
+    spider = mocker.Mock(data_dir=str(data_dir), pa11y_ignore_rules=None)
 
     # fake subprocess: version
     mocker.patch("subprocess.check_call")
@@ -237,7 +238,7 @@ def test_pa11y_stats(mocker, tmpdir):
 
     # setup
     data_dir = tmpdir.mkdir("data")
-    spider = mocker.Mock(data_dir=str(data_dir))
+    spider = mocker.Mock(data_dir=str(data_dir), pa11y_ignore_rules=None)
 
     # fake subprocess: version
     mocker.patch("subprocess.check_call")
@@ -264,3 +265,40 @@ def test_pa11y_stats(mocker, tmpdir):
     inc_value.assert_any_call("pa11y/error", count=3, spider=spider)
     inc_value.assert_any_call("pa11y/warning", count=4, spider=spider)
     inc_value.assert_any_call("pa11y/notice", count=5, spider=spider)
+
+
+def test_ignore_rules(mocker):
+    fake_pa11y_data = [
+        {"type": "error", "message": "you must construct additional pylons"},
+        {"type": "error", "message": "we require more vespene gas"},
+        {"type": "warning", "message": "our units are under attack"},
+        {"type": "warning", "message": "SCVs are under attack"},
+        {"type": "error", "message": "observers cannot attack"},
+        {"type": "notice", "message": "construction finished"},
+        {"type": "error", "message": "spawn more overlords"},
+        {"type": "warning", "message": "vespene geyser exhausted"},
+        {"type": "warning", "message": "mineral field depleted"},
+    ]
+    output = json.dumps(fake_pa11y_data).encode('utf8')
+    ignore_rules = {
+        "*": [
+            {"message": "*overlords"}
+        ],
+        "/starcraft": [
+            {"type": "notice"},
+            {"message": "*vespene*"},
+            {"message": "*attack*", "type": "warning"},
+        ],
+        "/vespene": [
+            {"message": "*depleted*"},
+        ]
+    }
+    spider = mocker.Mock(pa11y_ignore_rules=ignore_rules)
+    url = "/starcraft"
+
+    results = load_pa11y_results(output, spider, url)
+    assert results == [
+        {"type": "error", 'message': 'you must construct additional pylons'},
+        {"type": "error", 'message': 'observers cannot attack'},
+        {"type": "warning", 'message': 'mineral field depleted'},
+    ]

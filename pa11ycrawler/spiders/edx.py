@@ -5,6 +5,8 @@ import os
 import re
 import json
 from datetime import datetime
+import yaml
+import requests
 from urlobject import URLObject
 import scrapy
 from scrapy.spiders import CrawlSpider, Rule
@@ -34,6 +36,24 @@ def get_csrf_token(response):
         return None
     match = re.match("csrftoken=([^ ;]+);", csrf_headers[-1])
     return match.group(1)
+
+
+def load_pa11y_ignore_rules(url):
+    """
+    Load the pa11y ignore rules from the given URL.
+    """
+    if not url:
+        return None
+    resp = requests.get(url)
+    if not resp.ok:
+        msg = (
+            "PA11Y_IGNORE_RULES_URL specified, "
+            "but failed to fetch URL. status={status}"
+        ).format(status=resp.status_code)
+        err = RuntimeError(msg)
+        err.response = resp
+        raise err
+    return yaml.safe_load(resp.text)
 
 
 class EdxSpider(CrawlSpider):
@@ -67,6 +87,7 @@ class EdxSpider(CrawlSpider):
             http_user=None,
             http_pass=None,
             course_key="course-v1:edX+Test101+course",
+            pa11y_ignore_rules_url=None,
             data_dir="data",
         ):  # noqa
         super(EdxSpider, self).__init__()
@@ -79,6 +100,7 @@ class EdxSpider(CrawlSpider):
         self.http_user = http_user
         self.http_pass = http_pass
         self.data_dir = os.path.abspath(os.path.expanduser(data_dir))
+        self.pa11y_ignore_rules = load_pa11y_ignore_rules(pa11y_ignore_rules_url)
 
         # set start URL based on course_key, which is the test course by default
         api_url = (
@@ -216,9 +238,9 @@ class EdxSpider(CrawlSpider):
         """
         # if we got redirected to a login page, then login
         if URLObject(response.url).path == LOGIN_HTML_PATH:
-            requests = self.handle_unexpected_redirect_to_login_page(response)
-            for request in requests:
-                yield request
+            reqs = self.handle_unexpected_redirect_to_login_page(response)
+            for req in reqs:
+                yield req
 
         title = response.xpath("//title/text()").extract_first()
         if title:
