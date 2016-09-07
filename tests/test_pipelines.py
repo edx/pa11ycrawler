@@ -4,9 +4,9 @@ from datetime import datetime
 import subprocess as sp
 from scrapy.exceptions import DropItem, NotConfigured
 from pa11ycrawler.pipelines import (
-    DuplicatesPipeline, DropDRFPipeline, Pa11yPipeline, DEVNULL,
-    load_pa11y_results
+    DuplicatesPipeline, DropDRFPipeline, Pa11yPipeline
 )
+from pa11ycrawler.pipelines.pa11y import DEVNULL, load_pa11y_results
 try:
     from StringIO import StringIO
 except ImportError:  # Python 3

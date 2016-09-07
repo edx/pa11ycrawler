@@ -11,6 +11,7 @@ install: requirements
 
 develop: install
 	pip install --quiet --upgrade -r dev-requirements.txt --exists-action w
+	pip install --editable .
 
 clean:
 	find . -name '*.pyc' -delete
