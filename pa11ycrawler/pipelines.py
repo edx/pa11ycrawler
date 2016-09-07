@@ -5,9 +5,11 @@ See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 """
 import os
 import json
+import fnmatch
 import subprocess as sp
 import tempfile
 import hashlib
+import itertools
 from urlobject import URLObject
 from lxml import html
 from path import Path
@@ -58,6 +60,51 @@ class DropDRFPipeline(object):
             raise DropItem("Dropping DRF url {url}".format(url=url))
         else:
             return item
+
+
+def ignore_rules_for_url(spider, url):
+    """
+    Returns a list of ignore rules from the given spider,
+    that are relevant to the given URL.
+    """
+    ignore_rules = getattr(spider, "pa11y_ignore_rules", {}) or {}
+    return itertools.chain.from_iterable(
+        rule_list
+        for url_glob, rule_list
+        in ignore_rules.items()
+        if fnmatch.fnmatch(url, url_glob)
+    )
+
+
+def ignore_rule_matches_result(ignore_rule, pa11y_result):
+    """
+    Returns a boolean result of whether the given ignore rule matches
+    the given pa11y result. The rule only matches the result if *all*
+    attributes of the rule match.
+    """
+    return all(
+        fnmatch.fnmatch(pa11y_result.get(attr), ignore_rule.get(attr))
+        for attr in ignore_rule.keys()
+    )
+
+
+def load_pa11y_results(stdout, spider, url):
+    """
+    Load output from pa11y, filtering out the ignored messages.
+    The `stdout` parameter is a bytestring, not a unicode string.
+    """
+    if not stdout:
+        return []
+
+    results = json.loads(stdout.decode('utf8'))
+
+    ignore_rules = ignore_rules_for_url(spider, url)
+    for rule in ignore_rules:
+        results = [
+            result for result in results
+            if not ignore_rule_matches_result(rule, result)
+        ]
+    return results
 
 
 class Pa11yPipeline(object):
@@ -227,10 +274,7 @@ class Pa11yPipeline(object):
                 )
             )
 
-        if stdout:
-            pa11y_results = json.loads(stdout.decode('utf8'))
-        else:
-            pa11y_results = []
+        pa11y_results = load_pa11y_results(stdout, spider, item['url'])
         self.check_title_match(item['page_title'], pa11y_results, spider.logger)
         self.track_pa11y_stats(pa11y_results, spider)
         os.remove(config_file.name)
