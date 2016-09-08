@@ -5,6 +5,7 @@ import os
 import re
 import json
 from datetime import datetime
+from path import Path
 import yaml
 import requests
 from urlobject import URLObject
@@ -38,16 +39,28 @@ def get_csrf_token(response):
     return match.group(1)
 
 
-def load_pa11y_ignore_rules(url):
+def load_pa11y_ignore_rules(file=None, url=None):  # pylint: disable=redefined-builtin
     """
-    Load the pa11y ignore rules from the given URL.
+    Load the pa11y ignore rules from the given file or URL.
     """
-    if not url:
+    if not file and not url:
         return None
+
+    if file:
+        file = Path(file)
+        if not file.isfile():
+            msg = (
+                "pa11y_ignore_rules_file specified, "
+                "but file does not exist! {file}"
+            ).format(file=file)
+            raise ValueError(msg)
+        return yaml.safe_load(file.text())
+
+    # must be URL
     resp = requests.get(url)
     if not resp.ok:
         msg = (
-            "PA11Y_IGNORE_RULES_URL specified, "
+            "pa11y_ignore_rules_url specified, "
             "but failed to fetch URL. status={status}"
         ).format(status=resp.status_code)
         err = RuntimeError(msg)
@@ -87,6 +100,7 @@ class EdxSpider(CrawlSpider):
             http_user=None,
             http_pass=None,
             course_key="course-v1:edX+Test101+course",
+            pa11y_ignore_rules_file=None,
             pa11y_ignore_rules_url=None,
             data_dir="data",
         ):  # noqa
@@ -100,7 +114,9 @@ class EdxSpider(CrawlSpider):
         self.http_user = http_user
         self.http_pass = http_pass
         self.data_dir = os.path.abspath(os.path.expanduser(data_dir))
-        self.pa11y_ignore_rules = load_pa11y_ignore_rules(pa11y_ignore_rules_url)
+        self.pa11y_ignore_rules = load_pa11y_ignore_rules(
+            file=pa11y_ignore_rules_file, url=pa11y_ignore_rules_url,
+        )
 
         # set start URL based on course_key, which is the test course by default
         api_url = (

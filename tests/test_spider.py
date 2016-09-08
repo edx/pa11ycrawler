@@ -6,7 +6,7 @@ from scrapy.http.response.html import HtmlResponse
 import textwrap
 from freezegun import freeze_time
 from urlobject import URLObject
-from pa11ycrawler.spiders.edx import EdxSpider
+from pa11ycrawler.spiders.edx import EdxSpider, load_pa11y_ignore_rules
 try:
     from urllib.parse import parse_qs
 except ImportError:
@@ -171,4 +171,35 @@ def test_log_back_in():
         'request_headers': {},
         'url': 'http://localhost:8000/login?next=/foo/bar',
     }
+
+
+def test_load_pa11y_rules_file(tmpdir):
+    fake_rules = textwrap.dedent(u"""
+      "*":
+        - message: >-
+            Check that the link text combined with programmatically determined
+            link context identifies the purpose of the link.
+          context: <a * href="#main">Skip to main content</a>
+          type: notice
+    """)
+    rule_file = tmpdir / "ignore.yaml"
+    rule_file.write_text(fake_rules, encoding="utf8")
+
+    result = load_pa11y_ignore_rules(file=rule_file)
+
+    expected_result = {
+        "*": [{
+            "message": (
+                "Check that the link text combined with programmatically determined "
+                "link context identifies the purpose of the link."
+            ),
+            "context": '<a * href="#main">Skip to main content</a>',
+            "type": "notice",
+        }]
+    }
+    assert result == expected_result
+
+
+def test_load_pa11y_rules_none():
+    assert load_pa11y_ignore_rules() == None
 
