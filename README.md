@@ -12,7 +12,9 @@ JSON files, which can be transformed into a beautiful HTML report.
 Installation
 ============
 
-pa11ycrawler requires Python 2.7+ and Node.js installed.
+pa11ycrawler requires Python 2.7+ and Node.js installed. You must also install
+[phantomjs](http://phantomjs.org/), which [pa11y](http://pa11y.org/) uses
+in order to run accessibility tests on each page of a website.
 
 ```
 make install
