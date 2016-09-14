@@ -160,9 +160,25 @@ def test_pa11y_happy_path(mocker, tmpdir):
     mock_remove.assert_called_with("mockconfig.json")
 
 
+def test_phantomjs_not_installed(mocker):
+    mock_check_call = mocker.patch(
+        "subprocess.check_call", side_effect=(OSError, 0)
+    )
+
+    with pytest.raises(NotConfigured) as err:
+        Pa11yPipeline()
+
+    assert "phantomjs is not installed" in err.value.args[0]
+
+    mock_check_call.assert_called_with(
+        ["phantomjs", "--version"],
+        stdout=DEVNULL, stderr=DEVNULL,
+    )
+
+
 def test_pa11y_not_installed(mocker):
     mock_check_call = mocker.patch(
-        "subprocess.check_call", side_effect=OSError
+        "subprocess.check_call", side_effect=(0, OSError)
     )
 
     with pytest.raises(NotConfigured) as err:

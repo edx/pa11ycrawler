@@ -172,7 +172,21 @@ class Pa11yPipeline(object):
     }
 
     def __init__(self):
-        "Check to be sure that `pa11y` is installed properly"
+        """
+        Check to be sure that `pa11y` and `phantomjs` are installed properly.
+        """
+        try:
+            sp.check_call(
+                ["phantomjs", "--version"],
+                stdout=DEVNULL, stderr=DEVNULL,
+            )
+        except OSError:
+            # No such file or directory
+            msg = (
+                "phantomjs is not installed, and pa11y cannot run without it. "
+                "Install phantomjs through your system package manager."
+            )
+            raise NotConfigured(msg)
         try:
             sp.check_call(
                 [self.pa11y_path, "--version"],
