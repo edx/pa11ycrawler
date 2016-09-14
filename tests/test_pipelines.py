@@ -42,14 +42,24 @@ def test_duplicates_pipeline():
         dup_pl.process_item(item5, spider)
 
 
-def test_duplicates_pipeline_next():
+def test_duplicates_pipeline_querystring():
     dup_pl = DuplicatesPipeline()
     spider = object()
     item1 = {"url": "https://courses.edx.org/register?next=foo"}
+    processed1 = dup_pl.process_item(item1, spider)
+    assert item1 == processed1
+
     item2 = {"url": "https://courses.edx.org/register?next=bar"}
-    dup_pl.process_item(item1, spider)
     with pytest.raises(DropItem):
         dup_pl.process_item(item2, spider)
+
+    item3 = {"url": "https://courses.edx.org/register?foo=bar"}
+    with pytest.raises(DropItem):
+        dup_pl.process_item(item3, spider)
+
+    item4 = {"url": "https://courses.edx.org/register"}
+    with pytest.raises(DropItem):
+        dup_pl.process_item(item4, spider)
 
 
 def test_drf_pipeline():

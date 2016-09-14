@@ -11,19 +11,18 @@ from .pa11y import Pa11yPipeline
 
 class DuplicatesPipeline(object):
     """
-    Ensures that we only process each URL once.
+    Ensures that we only process each URL once. Assume that if two URLs
+    differ only by their querystring, they should be treated as the same
+    URL, and only one should be processed.
     """
     def __init__(self):
         self.urls_seen = set()
 
     def clean_url(self, url):
         """
-        A `next` query parameter indicates where the user should be
-        redirected to next -- it doesn't change the content of the page.
-        Two URLs that only differ by their `next` query paramenter should
-        be considered the same.
+        Remove querystrings.
         """
-        return URLObject(url).del_query_param("next")
+        return URLObject(url).without_query()
 
     def process_item(self, item, spider):  # pylint: disable=unused-argument
         """
