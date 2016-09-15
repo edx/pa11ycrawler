@@ -21,7 +21,7 @@ def get_requirements(path):
 
 setup(
     name='pa11ycrawler',
-    version='1.5.1',
+    version='1.5.2',
     package_data={
         'pa11ycrawler': [
             'templates/*.*',
