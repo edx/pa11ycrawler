@@ -107,7 +107,7 @@ def check_title_match(expected_title, pa11y_results, logger):
         # content we can from the output
         elided_title = title_elmt.text.strip()
         if elided_title.endswith("..."):
-            pa11y_title = elided_title[0:-3]
+            pa11y_title = elided_title[0:-4]
         else:
             pa11y_title = elided_title
 
