@@ -1,5 +1,12 @@
 from setuptools import setup
 
+VERSION = '1.5.3'
+DESCRIPTION = 'A Scrapy spider for a11y auditing Open edX installations.'
+LONG_DESCRIPTION = """pa11ycrawler is a Scrapy spider that runs a Pa11y check
+on every page of an Open edX installation,
+to audit it for accessibility purposes."""
+
+
 def is_requirement(line):
     line = line.strip()
     # Skip blank lines, comments, and editable installs
@@ -21,7 +28,12 @@ def get_requirements(path):
 
 setup(
     name='pa11ycrawler',
-    version='1.5.2',
+    version=VERSION,
+    author='edX',
+    author_email='oscm@edx.org',
+    url='https://github.com/edx/pa11ycrawler',
+    description=DESCRIPTION,
+    long_description=LONG_DESCRIPTION,
     package_data={
         'pa11ycrawler': [
             'templates/*.*',
