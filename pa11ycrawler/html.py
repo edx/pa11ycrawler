@@ -133,7 +133,7 @@ def render_html(data_dir, output_dir):
     }
     rendered_html = index_template.render(**context)  # pylint: disable=no-member
     html_path = output_dir / "index.html"
-    html_path.write_text(rendered_html)
+    html_path.write_text(rendered_html, encoding='utf-8')
 
 
 if __name__ == "__main__":
