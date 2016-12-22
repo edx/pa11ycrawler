@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import pytest
 import json
 from datetime import datetime
@@ -195,7 +196,7 @@ def test_pa11y_not_installed(mocker):
 def test_pa11y_title_mismatch(mocker, tmpdir):
     item = {
         "url": "http://courses.edx.org/ponies",
-        "page_title": "Sparkly Ponies of Joy",
+        "page_title": u"Sparkly Ponies of Joy ☃",
         "request_headers": {"Cookie": "nocookieforyou"},
         "accessed_at": datetime(2016, 8, 20, 14, 12, 45),
     }
@@ -234,7 +235,7 @@ def test_pa11y_title_mismatch(mocker, tmpdir):
 
     # check
     expected_msg = (
-        'Parser mismatch! Scrapy saw full title "Sparkly Ponies of Joy", '
+        u'Parser mismatch! Scrapy saw full title "Sparkly Ponies of Joy ☃", '
         'Pa11y saw elided title "Evil Demons of Despa...".'
     )
     spider.logger.error.assert_called_with(expected_msg)
