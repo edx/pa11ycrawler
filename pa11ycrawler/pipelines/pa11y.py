@@ -116,7 +116,7 @@ def check_title_match(expected_title, pa11y_results, logger):
         if pa11y_title not in expected_title:
             # whoa, something's screwy!
             msg = (
-                'Parser mismatch! '
+                u'Parser mismatch! '
                 'Scrapy saw full title "{scrapy_title}", '
                 'Pa11y saw elided title "{elided_title}".'
             ).format(
