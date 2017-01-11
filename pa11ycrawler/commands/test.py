@@ -1,9 +1,16 @@
+"""
+Contains the scrapy test command for configurable process failures.
+"""
 from scrapy.commands.crawl import Command as ExistingCrawlCommand
 from scrapy.exceptions import UsageError
-from pa11ycrawler.spiders.edx import EdxSpider
+
 
 class Command(ExistingCrawlCommand):
-
+    """
+    A wrapper for scrapy crawl that assigns the process a nonzero exit code if
+    any errors are raised during execution. Error categories are configurable
+    via settings['FAILURE_CATEGORIES'].
+    """
     requires_project = True
 
     def short_desc(self):
