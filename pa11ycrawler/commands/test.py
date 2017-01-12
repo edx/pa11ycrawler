@@ -1,32 +1,41 @@
 """
 Contains the scrapy test command for configurable process failures.
 """
+from scrapy.commands import ScrapyCommand
 from scrapy.commands.crawl import Command as ExistingCrawlCommand
-from scrapy.exceptions import UsageError
 
 
-class Command(ExistingCrawlCommand):
+class Command(ScrapyCommand):
     """
     A wrapper for scrapy crawl that assigns the process a nonzero exit code if
     any errors are raised during execution. Error categories are configurable
-    via settings['FAILURE_CATEGORIES'].
+    via settings['FAILURE_CATEGORIES']. It wraps, rather than extends, the
+    existing crawl command so it can be tested in isolation.
     """
     requires_project = True
+    existing_crawl_command = ExistingCrawlCommand()
+
+    def syntax(self):
+        return '[options] <spider>'
 
     def short_desc(self):
         return 'Run a spider that fails on specified errors'
 
+    def add_options(self, parser):
+        self.existing_crawl_command.settings = self.settings
+        self.existing_crawl_command.add_options(parser)
+
+    def process_options(self, args, opts):
+        self.existing_crawl_command.process_options(args, opts)
+
     def run(self, args, opts):
-        if len(args) < 1:
-            raise UsageError()
-        elif len(args) > 1:
-            raise UsageError("running 'scrapy crawl' with more than one spider is no longer supported")
         spname = args[0]
 
-        self.crawler_process.crawl(spname, **opts.spargs)
-        crawler = list(self.crawler_process.crawlers)[0]
-        self.crawler_process.start()
+        crawler = self.crawler_process.create_crawler(spname)
+        self.existing_crawl_command.crawler_process = self.crawler_process
+        self.existing_crawl_command.run(args, opts)
 
         for setting in crawler.settings['FAILURE_CATEGORIES']:
             if crawler.stats.get_value(setting, 0) > 0:
                 self.exitcode = 1
+                break
