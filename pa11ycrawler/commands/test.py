@@ -36,6 +36,6 @@ class Command(ScrapyCommand):
         self.existing_crawl_command.run(args, opts)
 
         for setting in crawler.settings['FAILURE_CATEGORIES']:
-            if crawler.stats.get_value(setting, 0) > 0:
+            if crawler.stats.get_value(setting, 0):
                 self.exitcode = 1
                 break
