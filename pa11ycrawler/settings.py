@@ -31,3 +31,10 @@ COOKIES_ENABLED = True
 DEPTH_LIMIT = 6
 LOG_LEVEL = 'INFO'
 LOG_FORMAT = '%(asctime)s [%(levelname)s] [%(name)s]: %(message)s'
+LOG_STDOUT = True
+
+# Error catching
+COMMANDS_MODULE = 'pa11ycrawler.commands'
+FAILURE_CATEGORIES = [
+    'log_count/ERROR',
+]
