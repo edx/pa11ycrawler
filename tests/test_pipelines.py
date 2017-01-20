@@ -63,6 +63,34 @@ def test_duplicates_pipeline_querystring():
         dup_pl.process_item(item4, spider)
 
 
+def test_duplicates_pipeline_courseware_start():
+    dup_pl = DuplicatesPipeline()
+    spider = object()
+    item1 = {"url": "https://courses.edx.org/courses/foo/courseware/bar/baz/"}
+    processed1 = dup_pl.process_item(item1, spider)
+    assert item1 == processed1
+
+    item2 = {"url": "https://courses.edx.org/courses/foo/courseware/bar/baz/1"}
+    with pytest.raises(DropItem):
+        dup_pl.process_item(item2, spider)
+
+    item3 = {"url": "https://courses.edx.org/courses/foo/courseware/bar/baz/2"}
+    processed3 = dup_pl.process_item(item3, spider)
+    assert item3 == processed3
+
+    item4 = {"url": "https://courses.edx.org/courses/quux/courseware/bar/baz/1"}
+    processed4 = dup_pl.process_item(item4, spider)
+    assert item4 == processed4
+
+    item5 = {"url": "https://courses.edx.org/courses/quux/courseware/bar/baz/"}
+    with pytest.raises(DropItem):
+        dup_pl.process_item(item5, spider)
+
+    item6 = {"url": "https://courses.edx.org/courses/quux/courseware/bar/baz/6"}
+    processed6 = dup_pl.process_item(item6, spider)
+    assert item6 == processed6
+
+
 def test_drf_pipeline():
     drf_pl = DropDRFPipeline()
     spider = object()
