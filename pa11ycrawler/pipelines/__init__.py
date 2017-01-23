@@ -24,11 +24,29 @@ class DuplicatesPipeline(object):
         """
         return URLObject(url).without_query()
 
+    def is_sequence_start_page(self, url):
+        """
+        Does this URL represent the first page in a section sequence? E.g.
+        /courses/{coursename}/courseware/{block_id}/{section_id}/1
+        This will return the same page as the pattern
+        /courses/{coursename}/courseware/{block_id}/{section_id}.
+        """
+        return (
+            len(url.path.segments) == 6 and
+            url.path.segments[0] == 'courses' and
+            url.path.segments[2] == 'courseware' and
+            url.path.segments[5] == '1'
+        )
+
     def process_item(self, item, spider):  # pylint: disable=unused-argument
         """
         Stops processing item if we've already seen this URL before.
         """
         url = self.clean_url(item["url"])
+
+        if self.is_sequence_start_page(url):
+            url = url.parent
+
         if url in self.urls_seen:
             raise DropItem("Dropping duplicate url {url}".format(url=item["url"]))
         else:
