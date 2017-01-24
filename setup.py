@@ -45,6 +45,7 @@ setup(
         'pa11ycrawler',
         'pa11ycrawler.pipelines',
         'pa11ycrawler.spiders',
+        'pa11ycrawler.commands',
     ],
     install_requires=get_requirements("requirements.txt"),
     tests_require=get_requirements("dev-requirements.txt"),

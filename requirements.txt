@@ -5,3 +5,4 @@ pyyaml<4.0
 requests<3.0
 scrapy==1.1.2
 urlobject<3.0
+setuptools==33.1.1
