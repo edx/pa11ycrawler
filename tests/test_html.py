@@ -22,6 +22,18 @@ def item(request):
 def test_render_html(item, tmpdir_factory):
     tmp_data_dir = Path(tmpdir_factory.mktemp('data'))
     pa11y_data = [{
+        "message": "Table cell has an invalid scope attribute.",
+        "code": "WCAG2AA.Principle2.Guideline2_4.2_4_2.H63.1",
+        "type": "error",
+        "context": "<th class=\"label\" scope=\"column\">Email</th>",
+        "selector": "#fake > th",
+    }, {
+        "message": "This hidden form field is labelled in some way.",
+        "code": "WCAG2AA.Principle2.Guideline2_4.2_4_2.F68.2",
+        "type": "warning",
+        "context": "<input type=\"hidden\" />",
+        "selector": "#fake > div",
+    }, {
         "message": "Check that the title element describes the document.",
         "code": "WCAG2AA.Principle2.Guideline2_4.2_4_2.H25.2",
         "type": "notice",
@@ -31,3 +43,6 @@ def test_render_html(item, tmpdir_factory):
     write_pa11y_results(item, pa11y_data, tmp_data_dir)
     render_html(tmp_data_dir, tmp_data_dir)
     assert os.path.isfile(os.path.join(tmp_data_dir, 'index.html'))
+    assert os.path.isfile(os.path.join(tmp_data_dir, 'errors.html'))
+    assert os.path.isfile(os.path.join(tmp_data_dir, 'warnings.html'))
+    assert os.path.isfile(os.path.join(tmp_data_dir, 'notices.html'))

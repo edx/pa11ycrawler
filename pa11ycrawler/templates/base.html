@@ -45,9 +45,10 @@
                     $('.table').bootstrapTable('filterBy', options);
                     $('.filterby-btn.current').removeClass('current').attr('aria-pressed', 'false');
                     $(this).addClass('current').attr('aria-pressed', 'true');
-                })
+                });
             });
         </script>
+        <title>{% block title %}Audit Results{% endblock %} - pa11ycrawler</title>
     </head>
     <body>
         {% block content %}{% endblock %}
