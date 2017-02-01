@@ -42,6 +42,7 @@ Option                    | Default                        | Example
 `pa11y_ignore_rules_file` | None                           | `scrapy crawl edx -a pa11y_ignore_rules_file=/tmp/ignore.yaml`
 `pa11y_ignore_rules_url`  | None                           | `scrapy crawl edx -a pa11y_ignore_rules_url=https://...`
 `data_dir`                | `data`                         | `scrapy crawl edx -a data_dir=~/pa11y-data`
+`single_url`			  | None						   | `scrapy crawl edx -a single-url=http://localhost:8003/courses/`
 
 These options can be combined by specifying the `-a` flag multiple times.
 For example, `scrapy crawl edx -a domain=courses.edx.org -a port=80`.
@@ -69,6 +70,10 @@ not yet exist. The crawler will never delete data from the data directory,
 so if you want to clear it out between runs, that's your responsibility.
 There is a `make clean-data` task available in the Makefile, which just runs
 `rm -rf data`.
+
+The `single_url` option is available to allow the spider to only crawl one web page. 
+The result is evaluated through the pipeline, but the spider will not continue crawling
+afterwards.
 
 Transform to HTML
 =================
