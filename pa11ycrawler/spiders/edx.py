@@ -5,6 +5,11 @@ import os
 import re
 import json
 from datetime import datetime
+# urlparse library depends on Python version
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 from path import Path
 import yaml
 import requests
@@ -12,6 +17,8 @@ from urlobject import URLObject
 import scrapy
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
+from scrapy.spidermiddlewares.httperror import HttpError
+from twisted.internet.error import DNSLookupError
 from pa11ycrawler.items import A11yItem
 
 LOGIN_HTML_PATH = "/login"
@@ -103,6 +110,7 @@ class EdxSpider(CrawlSpider):
             pa11y_ignore_rules_file=None,
             pa11y_ignore_rules_url=None,
             data_dir="data",
+            single_url=None,
         ):  # noqa
         super(EdxSpider, self).__init__()
 
@@ -114,24 +122,50 @@ class EdxSpider(CrawlSpider):
         self.http_user = http_user
         self.http_pass = http_pass
         self.data_dir = os.path.abspath(os.path.expanduser(data_dir))
+        self.single_url = single_url
         self.pa11y_ignore_rules = load_pa11y_ignore_rules(
             file=pa11y_ignore_rules_file, url=pa11y_ignore_rules_url,
         )
 
-        # set start URL based on course_key, which is the test course by default
-        api_url = (
-            URLObject("http://")
-            .with_hostname(self.domain)
-            .with_port(self.port)
-            .with_path(COURSE_BLOCKS_API_PATH)
-            .set_query_params(
-                course_id=self.course_key,
-                depth="all",
-                all_blocks="true",
+        if single_url:
+            self.start_urls = [single_url]
+        else:
+            # set start URL based on course_key, which is the test course by default
+            api_url = (
+                URLObject("http://")
+                .with_hostname(self.domain)
+                .with_port(self.port)
+                .with_path(COURSE_BLOCKS_API_PATH)
+                .set_query_params(
+                    course_id=self.course_key,
+                    depth="all",
+                    all_blocks="true",
+                )
             )
-        )
-        self.start_urls = [api_url]
+            self.start_urls = [api_url]
         self.allowed_domains = [domain]
+
+    def handle_error(self, failure):
+        """
+        Provides basic error information for bad requests.
+        If the error was an HttpError or DNSLookupError, it
+        prints more specific information.
+        """
+        self.logger.error(repr(failure))
+
+        if failure.check(HttpError):
+            response = failure.value.response
+            self.logger.error('HttpError on %s', response.url)
+            self.logger.error('HttpError Code: %s', response.status)
+            if response.status in (401, 403):
+                # If the error is from invalid login, tell the user
+                self.logger.error(
+                    "Credentials failed. Either add/update the current credentials "
+                    "or remove them to enable auto auth"
+                )
+        elif failure.check(DNSLookupError):
+            request = failure.request
+            self.logger.error('DNSLookupError on %s', request.url)
 
     def start_requests(self):
         """
@@ -144,6 +178,20 @@ class EdxSpider(CrawlSpider):
         handled by the `after_initial_login()` and `after_auto_auth()`
         methods.
         """
+        if self.single_url:
+            port = urlparse(self.single_url).port
+            if port:
+                if port != self.port:
+                    self.port = port
+            else:
+                # No need for credentials
+                yield scrapy.Request(
+                    self.single_url,
+                    callback=self.parse_item,
+                    errback=self.handle_error
+                )
+                return
+
         if self.login_email and self.login_password:
             login_url = (
                 URLObject("http://")
@@ -154,6 +202,7 @@ class EdxSpider(CrawlSpider):
             yield scrapy.Request(
                 login_url,
                 callback=self.after_initial_csrf,
+                errback=self.handle_error
             )
         else:
             self.logger.info(
@@ -177,6 +226,7 @@ class EdxSpider(CrawlSpider):
                 auth_url,
                 headers=headers,
                 callback=self.after_auto_auth,
+                errback=self.handle_error
             )
 
     def after_initial_csrf(self, response):
@@ -206,6 +256,7 @@ class EdxSpider(CrawlSpider):
             formdata=credentials,
             headers=headers,
             callback=self.after_initial_login,
+            errback=self.handle_error
         )
 
     def after_initial_login(self, response):
@@ -215,13 +266,24 @@ class EdxSpider(CrawlSpider):
         It verifies that the login request was successful,
         and then generates requests from `self.start_urls`.
         """
-        if "We couldn't sign you in." in response.text:
-            self.logger.error("Credentials failed!")
+        if LOGIN_FAILURE_MSG in response.text:
+            self.logger.error(
+                "Credentials failed. Either add/update the current credentials "
+                "or remove them to enable auto auth"
+            )
             return
 
         self.logger.info("successfully completed initial login")
-        for url in self.start_urls:
-            yield self.make_requests_from_url(url)
+
+        if self.single_url:
+            yield scrapy.Request(
+                self.single_url,
+                callback=self.parse_item,
+                errback=self.handle_error
+            )
+        else:
+            for url in self.start_urls:
+                yield self.make_requests_from_url(url)
 
     def after_auto_auth(self, response):
         """
@@ -239,8 +301,15 @@ class EdxSpider(CrawlSpider):
         ).format(**result)
         self.logger.info(msg)
 
-        for url in self.start_urls:
-            yield self.make_requests_from_url(url)
+        if self.single_url:
+            yield scrapy.Request(
+                self.single_url,
+                callback=self.parse_item,
+                errback=self.handle_error
+            )
+        else:
+            for url in self.start_urls:
+                yield self.make_requests_from_url(url)
 
     def parse_item(self, response):
         """
@@ -322,19 +391,15 @@ class EdxSpider(CrawlSpider):
             formdata=credentials,
             headers=headers,
             callback=self.after_login,
+            errback=self.handle_error
         )
 
     def after_login(self, response):
         """
-        Check for a login error, then proceed as normal.
         This is very much like the `after_initial_login()` method, but
         it searches for links in the response instead of generating
         requests from `self.start_urls`.
         """
-        if LOGIN_FAILURE_MSG in response.text:
-            self.logger.error("Credentials failed!")
-            return
-
         # delegate to the `parse_item()` method, which handles normal responses.
         for item in self.parse_item(response):
             yield item

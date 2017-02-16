@@ -3,6 +3,8 @@ import json
 from datetime import datetime
 import scrapy
 from scrapy.http.response.html import HtmlResponse
+from scrapy.spidermiddlewares.httperror import HttpError
+from twisted.internet.error import DNSLookupError
 import textwrap
 from freezegun import freeze_time
 from urlobject import URLObject
@@ -11,6 +13,8 @@ try:
     from urllib.parse import parse_qs
 except ImportError:
     from urlparse import parse_qs
+import logging
+from testfixtures import LogCapture
 
 
 CSRF_HEADER = (
@@ -198,6 +202,97 @@ def test_load_pa11y_rules_file(tmpdir):
         }]
     }
     assert result == expected_result
+
+
+def test_single_url():
+    url = 'http://localhost:8003/courses/course-v1:edX+Test101+course/discussion/forum/'
+    fake_result = {
+        "email": "sparky@gooddog.woof",
+        "password": "b4rkb4rkwo0f",
+    }
+    fake_response = HtmlResponse(
+        url=url,
+        body=json.dumps(fake_result).encode('utf8'),
+        encoding="utf-8",
+    )
+
+    spider = EdxSpider(single_url=url)
+    assert urls_are_equal(spider.single_url, url)
+
+    requests = list(spider.after_auto_auth(fake_response))
+    assert len(requests) == 1
+    
+    request = requests[0]
+    assert isinstance(request, scrapy.Request)
+    assert request.method == 'GET'
+    assert urls_are_equal(request.url, url)
+
+
+def test_handle_error(mocker):
+    def mock_check(error):
+        '''
+        This method overwrites the original check function
+        to determine what type of error has occurred.
+        Since this is a mock, isHttpError and isDNSError
+        can be used to test different scenarios.
+        '''
+        if error == HttpError:
+            return isHttpError
+        elif error == DNSLookupError:
+            return isDNSError
+
+    url = 'http://localhost:8003/courses/course-v1:edX+Test101+course/discussion/forum/'
+    spider = EdxSpider(single_url=url)
+
+    #test HTTP failure with incorrect login (401)
+    httpFailureMock = mocker.patch('twisted.python.failure.Failure')
+    httpFailureMock.check = mock_check
+    isHttpError = True
+    isDNSError = False
+    mocker.patch.object(httpFailureMock.value.response, 'status', 401)
+
+    with LogCapture() as l:
+        spider.handle_error(httpFailureMock)
+    records = list(l.records)
+    tests = [record.msg for record in records]
+
+    assert 'HttpError Code: %s' in tests
+    assert 'HttpError on %s' in tests
+    assert 'Credentials failed. Either add/update the current credentials ' \
+    'or remove them to enable auto auth' in tests
+    assert not 'DNSLookupError on %s' in tests
+
+    #test HTTP failure without incorrect login (404)
+    mocker.patch.object(httpFailureMock.value.response, 'status', 404)
+
+    with LogCapture() as l:
+        spider.handle_error(httpFailureMock)
+    records = list(l.records)
+    tests = [record.msg for record in records]
+
+    assert 'HttpError Code: %s' in tests
+    assert 'HttpError on %s' in tests
+    assert not 'Credentials failed. Either add/update the current credentials ' \
+    'or remove them to enable auto auth' in tests
+    assert not 'DNSLookupError on %s' in tests
+
+    #test DNSLookup failures
+    dnsFailureMock = mocker.patch('twisted.python.failure.Failure')
+    dnsFailureMock.check = mock_check
+    isHttpError = False
+    isDNSError = True
+    mocker.patch.object(dnsFailureMock, 'DNSLookupError', autospec=True)
+
+    with LogCapture() as l:
+        spider.handle_error(dnsFailureMock)
+    records = list(l.records)
+    tests = [record.msg for record in records]
+
+    assert 'DNSLookupError on %s' in tests
+    assert not 'HttpError Code: %s' in tests
+    assert not 'HttpError on %s' in tests
+    assert not 'Credentials failed. Either add/update the current credentials ' \
+    'or remove them to enable auto auth' in tests
 
 
 def test_load_pa11y_rules_none():
