@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = '1.5.8'
+VERSION = '1.5.9'
 DESCRIPTION = 'A Scrapy spider for a11y auditing Open edX installations.'
 LONG_DESCRIPTION = """pa11ycrawler is a Scrapy spider that runs a Pa11y check
 on every page of an Open edX installation,
