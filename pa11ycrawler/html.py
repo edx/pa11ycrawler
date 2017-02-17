@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import collections
+import hashlib
 from path import Path
 from jinja2 import Environment, PackageLoader
 from pa11ycrawler.util import pa11y_counts
@@ -15,6 +16,9 @@ log = logging.getLogger(__name__)
 
 PARENT_DIR = Path(__file__).abspath().parent
 REPO_DIR = PARENT_DIR.parent
+INDEX_TEMPLATE = 'index.html'
+DETAIL_TEMPLATE = 'detail.html'
+UNIQUE_TEMPLATE = 'unique.html'
 
 # A WCAG ref consists of one or more uppercase letters followed by one or more
 # digits. For example, "F77", "G73", "ARIA1".
@@ -82,6 +86,15 @@ def copy_assets(output_dir):
     (PARENT_DIR / "templates" / "assets").merge_tree(output_dir / "assets")
 
 
+def render_template(env, html_path, template_filename, context):
+    """
+    Render a template file into the given output location.
+    """
+    template = env.get_template(template_filename)
+    rendered_html = template.render(**context)  # pylint: disable=no-member
+    html_path.write_text(rendered_html, encoding='utf-8')
+
+
 def render_html(data_dir, output_dir):
     """
     The main workhorse of this script. Finds all the JSON data files
@@ -91,49 +104,67 @@ def render_html(data_dir, output_dir):
     env.globals["wcag_refs"] = wcag_refs
     pages = []
     counter = collections.Counter()
+    grouped_violations = collections.defaultdict(dict)
 
     copy_assets(output_dir)
 
     # render detail templates
-    template = env.get_template("detail.html")
     for data_file in data_dir.files('*.json'):
         data = json.load(data_file.open())
         num_error, num_warning, num_notice = pa11y_counts(data['pa11y'])
+
         data["num_error"] = num_error
         data["num_warning"] = num_warning
         data["num_notice"] = num_notice
-        rendered_html = template.render(**data)  # pylint: disable=no-member
-        # replace `.json` with `.html`
         fname = data_file.namebase + ".html"
         html_path = output_dir / fname
-        html_path.write_text(rendered_html, encoding='utf-8')
+        render_template(env, html_path, 'detail.html', data)
 
         data["filename"] = fname
         pages.append(data)
 
-        counter["error"] += num_error
-        counter["warning"] += num_warning
-        counter["notice"] += num_notice
+        for violation in data['pa11y']:
+            violation_id = hashlib.md5(
+                (violation['selector'] + violation['code']).encode('utf-8')
+            ).hexdigest()
+
+            if violation_id not in grouped_violations[violation['type']]:
+                violation['pages'] = []
+                grouped_violations[violation['type']][violation_id] = violation
+                counter[violation['type']] += 1
+
+            grouped_violations[violation['type']][violation_id]['pages'].append({
+                'url': data['url'],
+                'page_title': data['page_title']
+            })
 
     def extract_nums(page):
-        "Used for sorting"
+        "Used to sort pages by violation counts"
         return (
             page["num_error"],
             page["num_warning"],
             page["num_notice"],
         )
 
-    # render index template
-    index_template = env.get_template("index.html")
-    context = {
+    index_path = output_dir / INDEX_TEMPLATE
+    render_template(env, index_path, INDEX_TEMPLATE, {
         "pages": sorted(pages, key=extract_nums, reverse=True),
         "num_error": counter["error"],
         "num_warning": counter["warning"],
-        "num_notice": counter["notice"],
-    }
-    rendered_html = index_template.render(**context)  # pylint: disable=no-member
-    html_path = output_dir / "index.html"
-    html_path.write_text(rendered_html, encoding='utf-8')
+        "num_notice": counter["notice"]
+    })
+
+    for violation_type in grouped_violations:
+        unique_path = output_dir / u'{}s.html'.format(violation_type)
+        render_template(env, unique_path, UNIQUE_TEMPLATE, {
+            "grouped_violations": sorted(
+                grouped_violations[violation_type].values(),
+                key=lambda item: len(item['pages']),
+                reverse=True
+            ),
+            "current_type": violation_type,
+            "violation_counts": counter
+        })
 
 
 if __name__ == "__main__":

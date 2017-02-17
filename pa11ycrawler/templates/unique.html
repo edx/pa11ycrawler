@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Accessibility {{current_type|capitalize}}s{% endblock %}
+{% block content %}
+{% set color_class = {'error': 'danger', 'warning': 'warning', 'notice': 'info'} %}
+<div class="col-sm-10 col-sm-offset-1">
+  <h1 class="text-capitalize">Accessibility {{current_type}}s</h1>
+</div>
+<br />
+<div class="col-sm-10 col-sm-offset-1" style="margin-bottom: 30px;">
+  <div id='summary-toolbar' class="btn-group bars">
+    {% for type in ['error', 'warning', 'notice'] %}
+    <a  href="{{type}}s.html"
+        class="filterby-btn btn btn-secondary-outline text-capitalize {{'current' if type == current_type}}"
+        data-filterby='{{type}}'
+        aria-pressed="{{type == current_type}}">
+      {{type}}s
+      <span class="list-group-item-{{color_class[type]}} badge">{{ violation_counts[type] }}</span>
+      <span class="sr-only">Click to show {{type}}s.</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <table data-classes='table table-no-bordered'
+         data-toggle="table"
+         data-search="true">
+    <thead>
+      <tr>
+        <th data-field='type' data-sortable="true" data-width="10%">Type</th>
+        <th data-sortable="true" data-width="10%">WCAG</th>
+        <th data-sortable="true">Message</th>
+        <th data-sortable="true">HTML</th>
+        <th data-sortable="true" data-width="10%">Page Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for violation in grouped_violations %}
+        <tr>
+          <td class="{{ color_class[violation.type] }}">{{violation.type}}</td>
+          <td>
+          {% for ref in wcag_refs(violation.code) %}
+            <a href="https://www.w3.org/TR/WCAG20-TECHS/{{ ref }}.html">
+              <span class='sr-only'>Docs for </span>{{ ref }}
+            </a>
+          {% endfor %}
+          </td>
+          <td>{{violation.message}}</td>
+          <td>
+            {{ violation.selector | escape }}
+            <hr/>
+            {{ violation.context | escape }}
+          </td>
+          <td>
+            {{violation.pages|length}}
+          </td>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock content %}
