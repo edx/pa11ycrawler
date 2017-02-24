@@ -79,13 +79,6 @@ def wcag_refs(code):
     return []
 
 
-def copy_assets(output_dir):
-    """
-    Copy static assets (CSS, JS, fonts, etc) into the output directory.
-    """
-    (PARENT_DIR / "templates" / "assets").merge_tree(output_dir / "assets")
-
-
 def render_template(env, html_path, template_filename, context):
     """
     Render a template file into the given output location.
@@ -105,8 +98,6 @@ def render_html(data_dir, output_dir):
     pages = []
     counter = collections.Counter()
     grouped_violations = collections.defaultdict(dict)
-
-    copy_assets(output_dir)
 
     # render detail templates
     for data_file in data_dir.files('*.json'):
