@@ -134,7 +134,38 @@ def test_auto_auth_response(mocker):
     assert urls_are_equal(request.url, expected_url)
     assert request.method == "GET"
     assert request.headers == {}
-    assert not request.callback
+
+
+def test_analyze_urls(mocker):
+    spider = EdxSpider(email=None, password=None)
+    fake_json = {
+        "root": "coursename",
+        "blocks": {
+            "course block": {
+                "display_name": "displayname",
+                "block_id": "course",
+                "student_view_url": "http://localhost:8003/xblock/block-coursename+course+type@course+block@course",
+                "lms_web_url": "http://localhost:8003/courses/course-coursename/jump_to/block-coursename+course+type@course+block@course",
+                "type": "course",
+                "id": "block-coursename@course+block@course"
+            }
+        }
+    }
+    fake_response = HtmlResponse(
+        url="http://localhost:8003",
+        body=json.dumps(fake_json).encode('utf8'),
+        encoding="utf-8",
+    )
+    url_one = "http://localhost:8003/xblock/block-coursename+course+type@course+block@course"
+    url_two = "http://localhost:8003/courses/course-coursename/jump_to/block-coursename+course+type@course+block@course"
+
+    requests = list(spider.analyze_url_list(fake_response))
+    request_one = requests[0]
+    assert isinstance(request_one, scrapy.Request)
+    assert urls_are_equal(url_one, request_one.url)
+    request_two = requests[1]
+    assert isinstance(request_two, scrapy.Request)
+    assert urls_are_equal(url_two, request_two.url)
 
 
 @freeze_time("2016-01-01")

@@ -283,7 +283,11 @@ class EdxSpider(CrawlSpider):
             )
         else:
             for url in self.start_urls:
-                yield self.make_requests_from_url(url)
+                yield scrapy.Request(
+                    url,
+                    callback=self.analyze_url_list,
+                    errback=self.handle_error
+                )
 
     def after_auto_auth(self, response):
         """
@@ -309,7 +313,24 @@ class EdxSpider(CrawlSpider):
             )
         else:
             for url in self.start_urls:
-                yield self.make_requests_from_url(url)
+                yield scrapy.Request(
+                    url,
+                    callback=self.analyze_url_list,
+                    errback=self.handle_error
+                )
+
+    def analyze_url_list(self, response):
+        """
+        Parse JSON response for the beginning url(s) for
+        the crawler.
+        """
+        response = json.loads(response.text)
+        for _, block in response['blocks'].items():
+            for attribute in block:
+                parsed = urlparse(block[attribute])
+                # find urls in the JSON response
+                if parsed.scheme and parsed.netloc:
+                    yield self.make_requests_from_url(block[attribute])
 
     def parse_item(self, response):
         """
