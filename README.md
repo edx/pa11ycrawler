@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/edx/pa11ycrawler.svg?branch=master)](https://travis-ci.org/edx/pa11ycrawler)
+[![Coverage Status](https://img.shields.io/codecov/c/github/edx/pa11ycrawler/master.svg)](https://codecov.io/gh/edx/pa11ycrawler)
 
 Pa11ycrawler
 ============

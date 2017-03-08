@@ -24,7 +24,7 @@ clean-html:
 
 test: clean
 	scrapy check edx
-	py.test
+	py.test --cov=./
 
 quality: develop
 	pycodestyle pa11ycrawler
