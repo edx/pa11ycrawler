@@ -5,6 +5,7 @@ python:
   - "3.5"
 install:
   - pip install --upgrade pip
+  - pip install codecov
   - make develop
 script:
   - make quality
@@ -12,3 +13,5 @@ script:
 branches:
   only:
     - master
+after_success:
+  - codecov

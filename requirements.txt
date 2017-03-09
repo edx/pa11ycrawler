@@ -7,3 +7,4 @@ scrapy==1.1.2
 urlobject<3.0
 # Scrapy does not currently support Twisted 17.1
 Twisted==16.6
+pytest-cov>=2.4.0
