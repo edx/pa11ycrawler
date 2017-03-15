@@ -57,8 +57,7 @@ def load_pa11y_ignore_rules(file=None, url=None):  # pylint: disable=redefined-b
         file = Path(file)
         if not file.isfile():
             msg = (
-                "pa11y_ignore_rules_file specified, "
-                "but file does not exist! {file}"
+                u"pa11y_ignore_rules_file specified, but file does not exist! {file}"
             ).format(file=file)
             raise ValueError(msg)
         return yaml.safe_load(file.text())
@@ -67,8 +66,7 @@ def load_pa11y_ignore_rules(file=None, url=None):  # pylint: disable=redefined-b
     resp = requests.get(url)
     if not resp.ok:
         msg = (
-            "pa11y_ignore_rules_url specified, "
-            "but failed to fetch URL. status={status}"
+            u"pa11y_ignore_rules_url specified, but failed to fetch URL. status={status}"
         ).format(status=resp.status_code)
         err = RuntimeError(msg)
         err.response = resp
@@ -155,8 +153,8 @@ class EdxSpider(CrawlSpider):
 
         if failure.check(HttpError):
             response = failure.value.response
-            self.logger.error('HttpError on %s', response.url)
-            self.logger.error('HttpError Code: %s', response.status)
+            self.logger.error(u'HttpError on %s', response.url)
+            self.logger.error(u'HttpError Code: %s', response.status)
             if response.status in (401, 403):
                 # If the error is from invalid login, tell the user
                 self.logger.error(
@@ -165,7 +163,7 @@ class EdxSpider(CrawlSpider):
                 )
         elif failure.check(DNSLookupError):
             request = failure.request
-            self.logger.error('DNSLookupError on %s', request.url)
+            self.logger.error(u'DNSLookupError on %s', request.url)
 
     def start_requests(self):
         """
@@ -300,8 +298,7 @@ class EdxSpider(CrawlSpider):
         self.login_email = result["email"]
         self.login_password = result["password"]
         msg = (
-            "Obtained credentials via auto_auth! "
-            "email={email} password={password}"
+            u"Obtained credentials via auto_auth! email={email} password={password}"
         ).format(**result)
         self.logger.info(msg)
 

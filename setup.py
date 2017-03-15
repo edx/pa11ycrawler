@@ -1,6 +1,6 @@
 from setuptools import setup
 
-VERSION = '1.6.1'
+VERSION = '1.6.2'
 DESCRIPTION = 'A Scrapy spider for a11y auditing Open edX installations.'
 LONG_DESCRIPTION = """pa11ycrawler is a Scrapy spider that runs a Pa11y check
 on every page of an Open edX installation,
@@ -50,6 +50,21 @@ setup(
     install_requires=get_requirements("requirements.txt"),
     tests_require=get_requirements("dev-requirements.txt"),
     license="Apache-2.0",
+    classifiers=['Development Status :: 5 - Production/Stable',
+                 'Environment :: Console',
+                 'Intended Audience :: Developers',
+                 'License :: OSI Approved :: Apache Software License',
+                 'Operating System :: OS Independent',
+                 'Programming Language :: Python',
+                 'Programming Language :: Python :: 2',
+                 'Programming Language :: Python :: 2.7',
+                 'Programming Language :: Python :: 3',
+                 'Programming Language :: Python :: 3.5',
+                 'Programming Language :: Python :: 3.6',
+                 'Programming Language :: Python :: Implementation :: CPython',
+                 'Programming Language :: Python :: Implementation :: PyPy',
+                 'Topic :: Software Development :: Testing',
+                 'Topic :: Software Development :: Quality Assurance'],
     entry_points={
         'console_scripts': [
             'pa11ycrawler-html=pa11ycrawler.html:main',
