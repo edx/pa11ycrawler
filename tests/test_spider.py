@@ -160,12 +160,11 @@ def test_analyze_urls(mocker):
     url_two = "http://localhost:8003/courses/course-coursename/jump_to/block-coursename+course+type@course+block@course"
 
     requests = list(spider.analyze_url_list(fake_response))
-    request_one = requests[0]
-    assert isinstance(request_one, scrapy.Request)
-    assert urls_are_equal(url_one, request_one.url)
-    request_two = requests[1]
-    assert isinstance(request_two, scrapy.Request)
-    assert urls_are_equal(url_two, request_two.url)
+
+    assert any(request.url == url_one for request in requests)
+    assert any(request.url == url_two for request in requests)
+    assert all(isinstance(request,scrapy.Request) for request in requests)
+
 
 
 @freeze_time("2016-01-01")
