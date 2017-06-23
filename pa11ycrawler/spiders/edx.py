@@ -106,7 +106,7 @@ class EdxSpider(CrawlSpider):
             password=None,
             http_user=None,
             http_pass=None,
-            course_key="course-v1:edX+Test101+course",
+            course_key="course-v1:edX+TC102+course",
             pa11y_ignore_rules_file=None,
             pa11y_ignore_rules_url=None,
             data_dir="data",
@@ -304,7 +304,6 @@ class EdxSpider(CrawlSpider):
             "email={email} password={password}"
         ).format(**result)
         self.logger.info(msg)
-
         if self.single_url:
             yield scrapy.Request(
                 self.single_url,

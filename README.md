@@ -39,7 +39,7 @@ Option                    | Default                        | Example
 `password`                | None                           | (see above)
 `http_user`               | None                           | `scrapy crawl edx -a http_user=grace -a http_pass=hopper`
 `http_pass`               | None                           | (see above)
-`course_key`              | `course-v1:edX+Test101+course` | `scrapy crawl edx -a course_key=org/course/run`
+`course_key`              | `course-v1:edX+TC102+course`     | `scrapy crawl edx -a course_key=org/course/run`
 `pa11y_ignore_rules_file` | None                           | `scrapy crawl edx -a pa11y_ignore_rules_file=/tmp/ignore.yaml`
 `pa11y_ignore_rules_url`  | None                           | `scrapy crawl edx -a pa11y_ignore_rules_url=https://...`
 `data_dir`                | `data`                         | `scrapy crawl edx -a data_dir=~/pa11y-data`
@@ -72,7 +72,7 @@ so if you want to clear it out between runs, that's your responsibility.
 There is a `make clean-data` task available in the Makefile, which just runs
 `rm -rf data`.
 
-The `single_url` option is available to allow the spider to only crawl one web page. 
+The `single_url` option is available to allow the spider to only crawl one web page.
 The result is evaluated through the pipeline, but the spider will not continue crawling
 afterwards.
 
