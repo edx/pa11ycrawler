@@ -235,7 +235,7 @@ def test_load_pa11y_rules_file(tmpdir):
 
 
 def test_single_url():
-    url = 'http://localhost:8003/courses/course-v1:edX+Test101+course/discussion/forum/'
+    url = 'http://localhost:8003/courses/course-v1:edX+TC102+course/discussion/forum/'
     fake_result = {
         "email": "sparky@gooddog.woof",
         "password": "b4rkb4rkwo0f",
@@ -271,7 +271,7 @@ def test_handle_error(mocker):
         elif error == DNSLookupError:
             return isDNSError
 
-    url = 'http://localhost:8003/courses/course-v1:edX+Test101+course/discussion/forum/'
+    url = 'http://localhost:8003/courses/course-v1:edX+TC102+course/discussion/forum/'
     spider = EdxSpider(single_url=url)
 
     #test HTTP failure with incorrect login (401)
