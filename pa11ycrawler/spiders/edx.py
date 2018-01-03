@@ -53,6 +53,7 @@ def load_pa11y_ignore_rules(file=None, url=None):  # pylint: disable=redefined-b
     if not file and not url:
         return None
 
+    # comment
     if file:
         file = Path(file)
         if not file.isfile():
