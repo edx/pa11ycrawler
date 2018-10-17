@@ -15,6 +15,12 @@ from path import Path
 from scrapy.exceptions import DropItem, NotConfigured
 from pa11ycrawler.util import DateTimeEncoder, pa11y_counts
 
+try:
+    # Only available on Linux/UNIX
+    import pwd
+except ImportError:
+    pwd = None
+
 DEVNULL = open(os.devnull, 'wb')
 
 
@@ -74,10 +80,15 @@ def write_pa11y_config(item):
     and return a reference to that file.
     """
     config = {
-        "page": {
-            "headers": item["request_headers"],
-        },
+        "headers": item["request_headers"],
     }
+    if pwd and pwd.getpwuid(os.getuid()).pw_name == 'root':
+        # Chrome won't launch with the sandbox enabled as root (like in a
+        # Docker container); for context, see
+        # https://github.com/GoogleChrome/puppeteer/issues/290
+        config["chromeLaunchConfig"] = {
+            "args": ["--no-sandbox", "--disable-setuid-sandbox"],
+        }
     config_file = tempfile.NamedTemporaryFile(
         mode="w",
         prefix="pa11y-config-",
@@ -168,25 +179,29 @@ class Pa11yPipeline(object):
     """
     pa11y_path = "node_modules/.bin/pa11y"
     cli_flags = {
-        "reporter": "json-oldnode",
+        "reporter": "json",
     }
 
     def __init__(self):
         """
-        Check to be sure that `pa11y` and `phantomjs` are installed properly.
+        Check to be sure that `pa11y` and Chrome are installed properly.
         """
-        try:
-            sp.check_call(
-                ["phantomjs", "--version"],
-                stdout=DEVNULL, stderr=DEVNULL,
-            )
-        except OSError:
-            # No such file or directory
-            msg = (
-                "phantomjs is not installed, and pa11y cannot run without it. "
-                "Install phantomjs through your system package manager."
-            )
-            raise NotConfigured(msg)
+        if os.environ.get("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD"):
+            try:
+                chrome_path = os.environ["PUPPETEER_EXECUTABLE_PATH"]
+                sp.check_call(
+                    [chrome_path, "--version"],
+                    stdout=DEVNULL, stderr=DEVNULL,
+                )
+            except (KeyError, OSError):
+                # No such file or directory
+                msg = (
+                    "Google Chrome is not installed, and pa11y cannot run without it. "
+                    "Either install Chrome through your system package manager or unset "
+                    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD and run 'npm install' to have "
+                    "pa11y download a local copy of its own."
+                )
+                raise NotConfigured(msg)
         try:
             sp.check_call(
                 [self.pa11y_path, "--version"],
@@ -208,6 +223,8 @@ class Pa11yPipeline(object):
             self.pa11y_path,
             item["url"],
             '--config={file}'.format(file=config_file.name),
+            '--include-notices',
+            '--include-warnings',
         ]
         for flag, value in self.cli_flags.items():
             args.append("--{flag}={value}".format(flag=flag, value=value))

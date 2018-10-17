@@ -13,9 +13,19 @@ JSON files, which can be transformed into a beautiful HTML report.
 Installation
 ============
 
-pa11ycrawler requires Python 2.7+ and Node.js installed. You must also install
-[phantomjs](http://phantomjs.org/), which [pa11y](http://pa11y.org/) uses
-in order to run accessibility tests on each page of a website.
+pa11ycrawler requires Python 2.7+ and Node.js 8+ installed.  You must also
+install Google Chrome, which the
+[Puppeteer](https://developers.google.com/web/tools/puppeteer/) library used
+by pa11ycralwer uses to run accessibility tests on each page of a website.
+You also need to set the following environment variables before installing NPM
+dependencies:
+
+* PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
+* PUPPETEER_EXECUTABLE_PATH={path to Google Chrome binary}
+
+If these are not set, Puppeteer will download a separate copy of Chromium
+(but none of its dependencies, leaving it unusable in most Docker containers
+and headless servers).
 
 ```
 make install

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import pytest
 import json
 from datetime import datetime
@@ -158,7 +159,8 @@ def test_pa11y_happy_path(mocker, tmpdir):
     # pa11y should be called correctly
     mock_Popen.assert_called_with(
         ["node_modules/.bin/pa11y", "http://courses.edx.org/fakepage",
-         "--config=mockconfig.json", "--reporter=json-oldnode"],
+         "--config=mockconfig.json", "--include-notices",
+         "--include-warnings", "--reporter=json"],
         shell=False, stdout=sp.PIPE, stderr=sp.PIPE
     )
 
@@ -179,17 +181,26 @@ def test_pa11y_happy_path(mocker, tmpdir):
     mock_tempfile.seek(0)
     pa11y_config = json.load(mock_tempfile)
     expected_config = {
-        "page": {
-            "headers": {
-                "Cookie": "nocookieforyou",
-            }
+        "headers": {
+            "Cookie": "nocookieforyou",
         }
     }
     assert pa11y_config == expected_config
     mock_remove.assert_called_with("mockconfig.json")
 
 
-def test_phantomjs_not_installed(mocker):
+def test_chrome_path_not_specified(monkeypatch):
+    monkeypatch.setitem(os.environ, "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "1")
+    monkeypatch.delitem(os.environ, "PUPPETEER_EXECUTABLE_PATH")
+    with pytest.raises(NotConfigured) as err:
+        Pa11yPipeline()
+
+    assert "Google Chrome is not installed" in err.value.args[0]
+
+
+def test_chrome_not_installed(mocker, monkeypatch):
+    monkeypatch.setitem(os.environ, "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "1")
+    monkeypatch.setitem(os.environ, "PUPPETEER_EXECUTABLE_PATH", "/usr/bin/google-chrome-stable")
     mock_check_call = mocker.patch(
         "subprocess.check_call", side_effect=(OSError, 0)
     )
@@ -197,10 +208,10 @@ def test_phantomjs_not_installed(mocker):
     with pytest.raises(NotConfigured) as err:
         Pa11yPipeline()
 
-    assert "phantomjs is not installed" in err.value.args[0]
+    assert "Google Chrome is not installed" in err.value.args[0]
 
     mock_check_call.assert_called_with(
-        ["phantomjs", "--version"],
+        [os.environ["PUPPETEER_EXECUTABLE_PATH"], "--version"],
         stdout=DEVNULL, stderr=DEVNULL,
     )
 

@@ -1,10 +1,9 @@
 {
   "name": "pa11ycrawler",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "private": true,
   "dependencies": {
-    "pa11y": "4.0.1",
-    "pa11y-reporter-json-oldnode": "1.0.0"
+    "pa11y": "5.1.0"
   },
   "renovate": {
     "extends": [

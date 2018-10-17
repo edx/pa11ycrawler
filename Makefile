@@ -1,4 +1,4 @@
-.PHONY: requirements
+.PHONY: clean clean-data clean-html develop install quality requirements requirements.js test
 
 requirements: requirements.js
 	pip install --quiet --upgrade -r requirements.txt --exists-action w
@@ -24,7 +24,7 @@ clean-html:
 
 test: clean
 	scrapy check edx
-	py.test --cov=./
+	pytest --cov=./
 
 quality: develop
 	pycodestyle pa11ycrawler

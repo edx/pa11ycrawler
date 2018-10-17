@@ -1,6 +1,6 @@
 pytest>=2.7
 pytest-mock
-freezegun==0.3.7
+freezegun==0.3.10
 pycodestyle
 edx-lint
 # Enabling LogCapture for testing
