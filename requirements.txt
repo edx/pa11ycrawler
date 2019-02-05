@@ -3,7 +3,6 @@ lxml<4.0
 path.py<9.0
 pyyaml<4.0
 requests<3.0
-scrapy
+scrapy==1.6.0
 urlobject<3.0
-Twisted
 pytest-cov>=2.4.0
