@@ -1,8 +1,8 @@
 sudo: false
 language: python
 python:
-  - "2.7"
-  - "3.6"
+  - '2.7'
+  - '3.6'
 install:
   - pip install --upgrade pip
   - pip install codecov
@@ -13,5 +13,15 @@ script:
 branches:
   only:
     - master
+    - "/^\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
 after_success:
   - codecov
+deploy:
+  provider: pypi
+  user: edx
+  password:
+    secure: cjBW84P2Qbz88I4Wa1Q6qnoEy/1dYnkrJzOQZHJeAqyUSVsU9jm8pbwGkktxrrzVV5LOQ0Sg77I2j6ZF3sdfjoesUa9cpv+tPV4wiIFedpAC7pw5q1tyXkqD5nCyFAKRVPlo0FekdRsqLmBMBqQd6rJUI2J1G2QuDQnCiw8/pCKjWeMDg2OOU4n4MJakMURuwbgH1vEtumSDH6LT9x4rODQ4mV54/ifEJ1QMit+JS/M8H8IgaMdEuX2AjsraqeFQPv3ccyJxyHK0wMWopD/+IQt0zgU4FGlOTx45TLHEOuZ2lvWnUjO+4SOScpyiPpAnF3hLTSTgfJf+maIbMGI0rXhPgPdNd7SEfQVOFbY/8qKxvZF/46O93lKyzncA4WdKTzRUkQc4NcoU1yHMnfF4wGxwo7SJabNH+AMshww6Tg4ZgMYt/85jacEnUl5c+XLVdVXGIJhpRK8Gbcccnh0C+ChzhyyRku6SbZ4lDmEDzZjH8Og+NO5o1iJ5v9903bp/TrGexWlI878vNMV3I1NXKYnRCv2T0Ep1WQcKtTqCK9rua6euauNT0GdbY7tzv/h5YVedK6q0psWa4Wv2Yq/oBpWbNRKy8OnOemRfgqomQ4cDQTnZn4M4Xp+KpNsG6gIG0MBxnDEKzuh19qRrU512WpuXO9aOq0P8be0XItJZPFY=
+  distributions: sdist bdist_wheel
+  on:
+    tags: true
+    python: 3.6
