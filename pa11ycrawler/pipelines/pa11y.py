@@ -117,8 +117,8 @@ def check_title_match(expected_title, pa11y_results, logger):
             # whoa, something's screwy!
             msg = (
                 u'Parser mismatch! '
-                'Scrapy saw full title "{scrapy_title}", '
-                'Pa11y saw elided title "{elided_title}".'
+                u'Scrapy saw full title "{scrapy_title}", '
+                u'Pa11y saw elided title "{elided_title}".'
             ).format(
                 scrapy_title=expected_title, elided_title=elided_title,
             )
@@ -195,8 +195,7 @@ class Pa11yPipeline(object):
         except OSError:
             # No such file or directory
             msg = (
-                "pa11y is not installed at {path}. "
-                "Run `npm install` to install it."
+                u"pa11y is not installed at {path}. Run `npm install` to install it."
             ).format(path=self.pa11y_path)
             raise NotConfigured(msg)
 
@@ -217,7 +216,7 @@ class Pa11yPipeline(object):
         while retries_remaining:
             logline = " ".join(args)
             if retries_remaining != 3:
-                logline += "  # (retry {num})".format(num=3-retries_remaining)
+                logline += u"  # (retry {num})".format(num=3-retries_remaining)
             spider.logger.info(logline)
 
             proc = sp.Popen(
@@ -242,7 +241,7 @@ class Pa11yPipeline(object):
 
         if retries_remaining == 0:
             raise DropItem(
-                "Couldn't get pa11y results for {url}. Error:\n{err}".format(
+                u"Couldn't get pa11y results for {url}. Error:\n{err}".format(
                     url=item['url'],
                     err=stderr,
                 )

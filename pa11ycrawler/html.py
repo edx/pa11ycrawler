@@ -35,11 +35,11 @@ def make_parser():
     parser = argparse.ArgumentParser(description="generate HTML from crawler JSON")
     parser.add_argument(
         "--data-dir", default="data",
-        help="Directory containing JSON data from crawler [%(default)s]"
+        help=u"Directory containing JSON data from crawler [%(default)s]"
     )
     parser.add_argument(
         "--output-dir", default="html",
-        help="Directory to output the resulting HTML files [%(default)s]"
+        help=u"Directory to output the resulting HTML files [%(default)s]"
     )
     return parser
 
@@ -51,16 +51,16 @@ def main():
     parser = make_parser()
     args = parser.parse_args()
     data_dir = Path(args.data_dir).expand()
-    if not data_dir.isdir():
-        msg = "Data directory {dir} does not exist".format(dir=args.data_dir)
+    if not data_dir.isdir():  # pylint: disable=no-value-for-parameter
+        msg = u"Data directory {dir} does not exist".format(dir=args.data_dir)
         raise ValueError(msg)
-    data_filenames = [name for name in data_dir.files()
+    data_filenames = [name for name in data_dir.files()  # pylint: disable=no-value-for-parameter
                       if name.endswith(".json")]
     if not data_filenames:
-        msg = "Data directory {dir} contains no JSON files".format(dir=args.data_dir)
+        msg = u"Data directory {dir} contains no JSON files".format(dir=args.data_dir)
         raise ValueError(msg)
     output_dir = Path(args.output_dir).expand()
-    output_dir.makedirs_p()
+    output_dir.makedirs_p()  # pylint: disable=no-value-for-parameter
 
     return render_html(data_dir, output_dir)
 
