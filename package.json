@@ -1,6 +1,6 @@
 {
   "name": "pa11ycrawler",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "private": true,
   "dependencies": {
     "pa11y": "4.0.1",
