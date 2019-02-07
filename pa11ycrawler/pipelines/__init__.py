@@ -38,7 +38,7 @@ class DuplicatesPipeline(object):
             url.path.segments[5] == '1'
         )
 
-    def process_item(self, item):
+    def process_item(self, item, spider):  # pylint: disable=unused-argument
         """
         Stops processing item if we've already seen this URL before.
         """
@@ -59,7 +59,7 @@ class DropDRFPipeline(object):
     Drop pages that are generated from Django Rest Framework (DRF), so that
     they don't get processed by pa11y later in the pipeline.
     """
-    def process_item(self, item):
+    def process_item(self, item, spider):  # pylint: disable=unused-argument
         "Check for DRF urls."
         url = URLObject(item["url"])
         if url.path.startswith("/api/"):
