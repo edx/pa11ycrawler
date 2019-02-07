@@ -16,87 +16,91 @@ except ImportError:  # Python 3
 
 def test_duplicates_pipeline():
     dup_pl = DuplicatesPipeline()
+    spider = object()
     # first item: no problem
     item1 = {"url": "google.com"}
-    processed1 = dup_pl.process_item(item1)
+    processed1 = dup_pl.process_item(item1, spider)
     assert item1 == processed1
 
     # second item is different, so no problem
     item2 = {"url": "edx.org"}
-    processed2 = dup_pl.process_item(item2)
+    processed2 = dup_pl.process_item(item2, spider)
     assert item2 == processed2
 
     # third is the same as a previous, so raises an exception
     item3 = {"url": "google.com"}
     with pytest.raises(DropItem):
-        dup_pl.process_item(item3)
+        dup_pl.process_item(item3, spider)
 
     # fourth is different, so no problem
     item4 = {"url": "edx.org/foo"}
-    processed4 = dup_pl.process_item(item4)
+    processed4 = dup_pl.process_item(item4, spider)
     assert item4 == processed4
 
     # fifth has other, different properties, but the URL is the same
     item5 = {"url": "edx.org/foo", "page_title": "TitleCase"}
     with pytest.raises(DropItem):
-        dup_pl.process_item(item5)
+        dup_pl.process_item(item5, spider)
 
 
 def test_duplicates_pipeline_querystring():
     dup_pl = DuplicatesPipeline()
+    spider = object()
     item1 = {"url": "https://courses.edx.org/register?next=foo"}
-    processed1 = dup_pl.process_item(item1)
+    processed1 = dup_pl.process_item(item1, spider)
     assert item1 == processed1
 
     item2 = {"url": "https://courses.edx.org/register?next=bar"}
     with pytest.raises(DropItem):
-        dup_pl.process_item(item2)
+        dup_pl.process_item(item2, spider)
 
     item3 = {"url": "https://courses.edx.org/register?foo=bar"}
     with pytest.raises(DropItem):
-        dup_pl.process_item(item3)
+        dup_pl.process_item(item3, spider)
 
     item4 = {"url": "https://courses.edx.org/register"}
     with pytest.raises(DropItem):
-        dup_pl.process_item(item4)
+        dup_pl.process_item(item4, spider)
 
 
 def test_duplicates_pipeline_courseware_start():
     dup_pl = DuplicatesPipeline()
+    spider = object()
     item1 = {"url": "https://courses.edx.org/courses/foo/courseware/bar/baz/"}
-    processed1 = dup_pl.process_item(item1)
+    processed1 = dup_pl.process_item(item1, spider)
     assert item1 == processed1
 
     item2 = {"url": "https://courses.edx.org/courses/foo/courseware/bar/baz/1"}
     with pytest.raises(DropItem):
-        dup_pl.process_item(item2)
+        dup_pl.process_item(item2, spider)
 
     item3 = {"url": "https://courses.edx.org/courses/foo/courseware/bar/baz/2"}
-    processed3 = dup_pl.process_item(item3)
+    processed3 = dup_pl.process_item(item3, spider)
     assert item3 == processed3
 
     item4 = {"url": "https://courses.edx.org/courses/quux/courseware/bar/baz/1"}
-    processed4 = dup_pl.process_item(item4)
+    processed4 = dup_pl.process_item(item4, spider)
     assert item4 == processed4
 
     item5 = {"url": "https://courses.edx.org/courses/quux/courseware/bar/baz/"}
     with pytest.raises(DropItem):
-        dup_pl.process_item(item5)
+        dup_pl.process_item(item5, spider)
 
     item6 = {"url": "https://courses.edx.org/courses/quux/courseware/bar/baz/6"}
-    processed6 = dup_pl.process_item(item6)
+    processed6 = dup_pl.process_item(item6, spider)
     assert item6 == processed6
 
 
 def test_drf_pipeline():
     drf_pl = DropDRFPipeline()
+    spider = object()
 
     with pytest.raises(DropItem):
-        drf_pl.process_item({"url": "http://courses.edx.org/api/"})
+        drf_pl.process_item({"url": "http://courses.edx.org/api/"}, spider)
 
     # non-api url is fine, though
     item = {"url": "http://courses.edx.org/course/whatever"}
-    processed = drf_pl.process_item(item)
+    processed = drf_pl.process_item(item, spider)
     assert item == processed
 
 
