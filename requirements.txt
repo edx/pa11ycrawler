@@ -1,7 +1,7 @@
 Jinja2<3.0
 lxml<4.0
 path.py<9.0
-pyyaml<4.0
+pyyaml
 requests<3.0
 scrapy==1.6.0
 urlobject<3.0
