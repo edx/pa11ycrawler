@@ -5,5 +5,23 @@
   "dependencies": {
     "pa11y": "4.0.1",
     "pa11y-reporter-json-oldnode": "1.0.0"
+  },
+  "renovate": {
+    "extends": [
+      "config:base",
+      "schedule:weekly"
+    ],
+    "prCreation": "not-pending",
+    "python": {
+      "enabled": false
+    },
+    "rangeStrategy": "auto",
+    "reviewers": [
+      "estute",
+      "jmbowman",
+      "michaelyoungstrom"
+    ],
+    "separateMajorMinor": false,
+    "unpublishSafe": true
   }
 }
