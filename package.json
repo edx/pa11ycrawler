@@ -3,7 +3,7 @@
   "version": "1.7.3",
   "private": true,
   "dependencies": {
-    "pa11y": "4.0.1",
+    "pa11y": "5.1.0",
     "pa11y-reporter-json-oldnode": "1.0.0"
   },
   "renovate": {
